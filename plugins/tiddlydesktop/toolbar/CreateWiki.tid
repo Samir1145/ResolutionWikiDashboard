@@ -1,5 +1,4 @@
 title: WikiListToolbar/CreateWiki
-tags: toolbar
 
 \whitespace trim
 \define browse-button-file()

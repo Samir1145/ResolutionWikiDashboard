@@ -1,4 +1,4 @@
-CFBundleDisplayName = "TiddlyDesktop";
-CFBundleGetInfoString = "TiddlyDesktop, based on nwjs Copyright 2023 UnaMesa Association. All rights reserved.";
-CFBundleName = "TiddlyDesktop";
+CFBundleDisplayName = "Resolution Bazaar";
+CFBundleGetInfoString = "Resolution Bazaar, based on nwjs Copyright 2023 UnaMesa Association. All rights reserved.";
+CFBundleName = "Resolution Bazaar";
 NSHumanReadableCopyright = "Copyright 2023 UnaMesa Association. All rights reserved. Copyright 2017 The Chromium Authors, NW.js contributors, Node.js. All rights reserved.";

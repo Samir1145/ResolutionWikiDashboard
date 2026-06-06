@@ -48,12 +48,12 @@ fi
 # OS X 64-bit App
 build_mac64() {
 
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjs.app output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/TiddlyDesktop.app
-cp -RH source output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Resources/app.nw
-cp icons/app.icns output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Resources/nw.icns
-cp Info.plist output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Info.plist
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjs.app output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app
+cp -RH source output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw
+cp icons/app.icns output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/nw.icns
+cp Info.plist output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Info.plist
 
-for f in output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Resources/*.lproj
+for f in output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/*.lproj
 do
 	cp "./strings/InfoPlist.strings" "$f/InfoPlist.strings"
 done
@@ -63,17 +63,17 @@ done
 # OS X Apple Silicon App
 build_macapplesilicon() {
 
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-arm64/nwjs.app output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/TiddlyDesktop.app
-cp -RH source output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Resources/app.nw
-cp icons/app.icns output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Resources/nw.icns
-cp Info.plist output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Info.plist
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-arm64/nwjs.app output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app
+cp -RH source output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw
+cp icons/app.icns output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/nw.icns
+cp Info.plist output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Info.plist
 
-for f in output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/TiddlyDesktop.app/Contents/Resources/*.lproj
+for f in output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/*.lproj
 do
 	cp "./strings/InfoPlist.strings" "$f/InfoPlist.strings"
 done
 
-xattr -c output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/TiddlyDesktop.app
+xattr -c output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app
 
 }
 
