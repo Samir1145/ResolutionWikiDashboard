@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Wiki List</title>
+  <style>
+    body {font-family: var(--font-family, Arial), sans-serif; background: var(--bg, #fafafa); margin:0; padding:1rem;}
+    #backBtn {background: var(--primary-accent, #0066ff); color:#fff; border:none; padding:0.4rem 0.8rem; border-radius:4px; cursor:pointer; margin-bottom:1rem;}
+    #searchWikis {width:100%; padding:0.4rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:4px;}
+    .wiki-item {background: var(--card-bg, rgba(255,255,255,0.8)); backdrop-filter: blur(8px); border-radius:6px; padding:0.6rem; margin:0.4rem 0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    .wiki-name {font-weight:500;}
+    .open-link {text-decoration:none; color:var(--link-color, #0066ff); margin-right:1rem;}
+    .btn {color: #fff; border: none; padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;}
+    .delete-btn {background: var(--danger-accent, #dc3545);}
+    .add-btn {background: var(--secondary-accent, #28a745); padding: 0.4rem 0.8rem; font-size: 1rem; margin-bottom: 1rem; display: block;}
+    .actions {display: flex; align-items: center;}
+  </style>
+</head>
+<body>
+  <button id="backBtn">← Back to Dashboard</button>
+  <h1 id="projectTitle">Project: </h1>
+  <button id="addWikiBtn" class="btn add-btn">+ Add Wiki</button>
+  <input type="text" id="searchWikis" placeholder="Search wikis..." />
+  <div id="wikiList"></div>
+
+  <script src="../js/wiki-list.js"></script>
+</body>
+</html>

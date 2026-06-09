@@ -171,8 +171,27 @@ $tw.boot.boot(function() {
 	// gui.App.on("open",function(cmdline) {
 	// 	$tw.desktop.windowList.openByPathname(p);
 	// });
-	// Open wiki list window if we haven't opened any other windows
+	// Open dashboard window if we haven't opened any other windows
 	if(!commandFlags.haveOpenedWindow) {
-		$tw.desktop.windowList.openByUrl("backstage://WikiListWindow",{mustQuitOnClose: true});		
+		$tw.desktop.gui.Window.open("html/dashboard.html", {
+			id: "tiddlydesktop-dashboard",
+			show: true,
+			width: 980,
+			height: 700,
+			min_width: 700,
+			min_height: 500,
+			icon: "images/app-icon.png"
+		}, function(win) {
+			// Inject $tw immediately (before load)
+			win.window.$tw = $tw;
+			// Re-inject after document is ready to handle any race condition
+			win.once("loaded", function() {
+				win.window.$tw = $tw;
+				win.window._twGlobal = global;
+			});
+			win.on("close", function() {
+				gui.App.quit();
+			});
+		});
 	}
 });

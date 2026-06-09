@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Dashboard</title>
+  <style>
+    body {font-family: var(--font-family, Arial), sans-serif; background: var(--bg, #fafafa); margin:0; padding:1rem;}
+    #addFolderBtn {background: var(--primary-accent, #0066ff); color:#fff; border:none; padding:0.5rem 1rem; border-radius:4px; cursor:pointer; margin-bottom:1rem;}
+    .folder-card {background: var(--card-bg, rgba(255,255,255,0.8)); backdrop-filter: blur(8px); border-radius:8px; padding:1rem; margin:0.5rem 0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+    .folder-name {font-weight:600;}
+    .wiki-count {background: var(--badge-bg, #e0e0e0); border-radius:12px; padding:0.2rem 0.6rem; font-size:0.85rem;}
+    .btn {color: #fff; border: none; padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; margin-left: 10px;}
+    .rename-btn {background: var(--secondary-accent, #17a2b8);}
+    .open-btn {background: var(--tertiary-accent, #6c757d);}
+    .delete-btn {background: var(--danger-accent, #dc3545);}
+    .badge-container {display: flex; align-items: center;}
+    #searchInput {width:100%; padding:0.4rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:4px;}
+    .wiki-item {background: var(--card-bg, rgba(255,255,255,0.8)); backdrop-filter: blur(8px); border-radius:6px; padding:0.6rem; margin:0.4rem 0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    .wiki-name {font-weight:500;}
+    .open-link {text-decoration:none; color:var(--link-color, #0066ff); margin-right:1rem;}
+    .add-btn {background: var(--secondary-accent, #28a745); padding: 0.4rem 0.8rem; font-size: 1rem; margin-bottom: 1rem; display: block;}
+    .actions {display: flex; align-items: center;}
+  </style>
+</head>
+<body>
+  <!-- MAIN DASHBOARD VIEW -->
+  <div id="dashboardView">
+    <div id="loader" style="font-size:1.5rem; text-align:center; margin-top:2rem;">Loading Dashboard...</div>
+    <button id="addFolderBtn" style="display:none;">Add Project Folder</button>
+    <input type="text" id="searchInput" placeholder="Search projects..." style="display:none;" />
+    <div id="folderList" style="display:none;"></div>
+  </div>
+
+  <!-- WIKI LIST VIEW -->
+  <div id="wikiListView" style="display:none;">
+    <button id="backBtn" class="btn open-btn" style="margin-left:0; margin-bottom:1rem;">← Back to Dashboard</button>
+    <h1 id="projectTitle">Project: </h1>
+    <button id="addWikiBtn" class="btn add-btn">+ Add Wiki</button>
+    <input type="text" id="searchWikis" placeholder="Search wikis..." style="width:100%; padding:0.4rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:4px;" />
+    <div id="wikiList"></div>
+  </div>
+
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>

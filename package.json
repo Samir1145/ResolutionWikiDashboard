@@ -1,6 +1,10 @@
 {
-    "name": "tiddlydesktop",
+    "main": "./html/boot-dashboard.html",
     "version": "0.0.22",
+    "scripts": {
+        "build": "./bld.sh",
+        "dev": "./run.sh"
+    },
     "author": "Jeremy Ruston <jeremy@jermolene.com>",
     "description": "a desktop application for TiddlyWiki",
     "contributors": [
