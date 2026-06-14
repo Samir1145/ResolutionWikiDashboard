@@ -3,29 +3,330 @@
 <head>
   <meta charset="UTF-8">
   <title>Project Dashboard</title>
+  <script>
+    // Immediate script to apply theme preference before DOM loads to avoid flash
+    (function() {
+      try {
+        const path = require("path");
+        const fs = require("fs");
+        const nw = window.nw || require("nw.gui");
+        const settingsPath = path.join(nw.App.dataPath, "bazaar-settings.json");
+        if (fs.existsSync(settingsPath)) {
+          const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+          if (settings.theme === "light") {
+            document.documentElement.classList.add("light-theme");
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load theme settings:", e);
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {font-family: var(--font-family, Arial), sans-serif; background: var(--bg, #fafafa); margin:0; padding:1rem;}
-    #addFolderBtn {background: var(--primary-accent, #0066ff); color:#fff; border:none; padding:0.5rem 1rem; border-radius:4px; cursor:pointer; margin-bottom:1rem;}
-    .folder-card {background: var(--card-bg, rgba(255,255,255,0.8)); backdrop-filter: blur(8px); border-radius:8px; padding:1rem; margin:0.5rem 0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
-    .folder-name {font-weight:600;}
-    .wiki-count {background: var(--badge-bg, #e0e0e0); border-radius:12px; padding:0.2rem 0.6rem; font-size:0.85rem;}
-    .btn {color: #fff; border: none; padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; margin-left: 10px;}
-    .rename-btn {background: var(--secondary-accent, #17a2b8);}
-    .open-btn {background: var(--tertiary-accent, #6c757d);}
-    .delete-btn {background: var(--danger-accent, #dc3545);}
-    .badge-container {display: flex; align-items: center;}
-    #searchInput {width:100%; padding:0.4rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:4px;}
-    .wiki-item {background: var(--card-bg, rgba(255,255,255,0.8)); backdrop-filter: blur(8px); border-radius:6px; padding:0.6rem; margin:0.4rem 0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);}
-    .wiki-name {font-weight:500;}
-    .open-link {text-decoration:none; color:var(--link-color, #0066ff); margin-right:1rem;}
-    .add-btn {background: var(--secondary-accent, #28a745); padding: 0.4rem 0.8rem; font-size: 1rem; margin-bottom: 1rem; display: block;}
-    .actions {display: flex; align-items: center;}
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 30, 49, 0.75);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary-accent: #3b82f6;
+      --primary-hover: #2563eb;
+      --secondary-accent: #10b981;
+      --secondary-hover: #059669;
+      --danger-accent: #f43f5e;
+      --danger-hover: #e11d48;
+      --tertiary-accent: #334155;
+      --tertiary-hover: #475569;
+      --link-color: #60a5fa;
+      --input-bg: #111827;
+      --input-focus: #1e293b;
+      --btn-text: #ffffff;
+      --title-gradient: linear-gradient(135deg, #ffffff 30%, #94a3b8);
+    }
+
+    :root.light-theme {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --border-color: rgba(15, 23, 42, 0.08);
+      --text-color: #0f172a;
+      --text-muted: #64748b;
+      --primary-accent: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary-accent: #059669;
+      --secondary-hover: #047857;
+      --danger-accent: #e11d48;
+      --danger-hover: #be123c;
+      --tertiary-accent: #f1f5f9;
+      --tertiary-hover: #e2e8f0;
+      --link-color: #2563eb;
+      --input-bg: #ffffff;
+      --input-focus: #f8fafc;
+      --btn-text: #0f172a;
+      --title-gradient: linear-gradient(135deg, #0f172a 30%, #475569);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text-color);
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+      background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 400px);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body.light-theme {
+      background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.04), transparent 400px);
+    }
+
+    /* THEME TOGGLE BUTTON */
+    .theme-toggle {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.25rem;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+    }
+    .theme-toggle:hover {
+      transform: scale(1.1);
+      border-color: var(--primary-accent);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    #addFolderBtn {
+      background: var(--primary-accent);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    #addFolderBtn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .folder-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin: 0.75rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    .folder-card:hover {
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .folder-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text-color);
+    }
+
+    .wiki-count {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .btn {
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-left: 10px;
+      transition: all 0.15s ease;
+    }
+
+    .rename-btn {
+      background: var(--tertiary-accent);
+      color: var(--btn-text);
+      border: 1px solid var(--border-color);
+    }
+    .rename-btn:hover {
+      background: var(--tertiary-hover);
+    }
+
+    .open-btn {
+      background: var(--tertiary-accent);
+      color: var(--btn-text);
+      border: 1px solid var(--border-color);
+    }
+    .open-btn:hover {
+      background: var(--tertiary-hover);
+    }
+
+    .delete-btn {
+      background: var(--danger-accent);
+      box-shadow: 0 2px 6px rgba(244, 63, 94, 0.15);
+    }
+    .delete-btn:hover {
+      background: var(--danger-hover);
+    }
+
+    .badge-container {
+      display: flex;
+      align-items: center;
+    }
+
+    #searchInput, #searchWikis {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-color);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    #searchInput:focus, #searchWikis:focus {
+      outline: none;
+      border-color: var(--primary-accent);
+      background: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    /* WIKI LIST VIEW HEADER RATIONALIZATION */
+    .wiki-list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .back-btn {
+      background: var(--tertiary-accent);
+      color: var(--btn-text);
+      border: 1px solid var(--border-color);
+      margin-left: 0;
+      white-space: nowrap;
+    }
+    .back-btn:hover {
+      background: var(--tertiary-hover);
+      transform: translateX(-2px);
+    }
+
+    .project-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0;
+      text-align: center;
+      flex-grow: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-color);
+      background: var(--title-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .add-btn {
+      background: var(--secondary-accent);
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+    .add-btn:hover {
+      background: var(--secondary-hover);
+      transform: translateY(-1px);
+    }
+
+    .wiki-item {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin: 0.6rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .wiki-item:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .wiki-name {
+      font-weight: 500;
+      font-size: 1.02rem;
+    }
+
+    .open-link {
+      text-decoration: none;
+      color: var(--link-color);
+      margin-right: 1.5rem;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+    .open-link:hover {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
   <!-- MAIN DASHBOARD VIEW -->
   <div id="dashboardView">
-    <div id="loader" style="font-size:1.5rem; text-align:center; margin-top:2rem;">Loading Dashboard...</div>
+    <!-- THEME TOGGLE BUTTON -->
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle Theme">🌙</button>
+    <div id="loader" style="font-size:1.5rem; text-align:center; margin-top:2rem; color:var(--text-muted);">Loading Dashboard...</div>
     <button id="addFolderBtn" style="display:none;">Add Project Folder</button>
     <input type="text" id="searchInput" placeholder="Search projects..." style="display:none;" />
     <div id="folderList" style="display:none;"></div>
@@ -33,13 +334,95 @@
 
   <!-- WIKI LIST VIEW -->
   <div id="wikiListView" style="display:none;">
-    <button id="backBtn" class="btn open-btn" style="margin-left:0; margin-bottom:1rem;">← Back to Dashboard</button>
-    <h1 id="projectTitle">Project: </h1>
-    <button id="addWikiBtn" class="btn add-btn">+ Add Wiki</button>
-    <input type="text" id="searchWikis" placeholder="Search wikis..." style="width:100%; padding:0.4rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:4px;" />
+    <div class="wiki-list-header">
+      <button id="backBtn" class="btn back-btn">← Back to Dashboard</button>
+      <h1 id="projectTitle" class="project-title">Project: </h1>
+      <button id="addWikiBtn" class="btn add-btn">+ Add Report</button>
+    </div>
+    <input type="text" id="searchWikis" placeholder="Search reports..." />
     <div id="wikiList"></div>
   </div>
 
-  <script src="../js/dashboard.js"></script>
+  <script>
+    (function() {
+      var path = require("path");
+      var fs = require("fs");
+      
+      var binPath = "";
+      if (typeof __dirname !== "undefined") {
+        binPath = path.join(__dirname, "js/dashboard.bin");
+      } else {
+        var cleanPath = window.location.pathname.replace(/^file:\/\//, "");
+        if (process.platform === "win32" && cleanPath.startsWith("/")) {
+          cleanPath = cleanPath.substring(1);
+        }
+        var currentDir = path.dirname(cleanPath);
+        binPath = path.join(decodeURIComponent(currentDir), "../js/dashboard.bin");
+      }
+
+      if (fs.existsSync(binPath)) {
+        try {
+          nw.Window.get().evalNWBin(null, binPath);
+        } catch (err) {
+          console.error("Failed to load binary snapshot, falling back to JS:", err);
+          loadFallback();
+        }
+      } else {
+        loadFallback();
+      }
+
+      function loadFallback() {
+        var script = document.createElement("script");
+        script.src = "../js/dashboard.js";
+        document.body.appendChild(script);
+      }
+    })();
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const themeToggle = document.getElementById("themeToggle");
+      const path = require("path");
+      const fs = require("fs");
+      const nw = window.nw || require("nw.gui");
+      const settingsPath = path.join(nw.App.dataPath, "bazaar-settings.json");
+
+      const getTheme = () => {
+        try {
+          if (fs.existsSync(settingsPath)) {
+            const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+            return settings.theme || "dark";
+          }
+        } catch (e) {}
+        return "dark";
+      };
+
+      const saveTheme = (theme) => {
+        try {
+          let settings = {};
+          if (fs.existsSync(settingsPath)) {
+            settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+          }
+          settings.theme = theme;
+          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf8");
+        } catch (e) {
+          console.error("Failed to save theme settings:", e);
+        }
+      };
+
+      const updateIcon = () => {
+        const isLight = document.documentElement.classList.contains("light-theme");
+        themeToggle.textContent = isLight ? "☀️" : "🌙";
+      };
+
+      // Set initial state from class list
+      updateIcon();
+
+      themeToggle.addEventListener("click", () => {
+        const isLight = document.documentElement.classList.toggle("light-theme");
+        saveTheme(isLight ? "light" : "dark");
+        updateIcon();
+      });
+    });
+  </script>
 </body>
 </html>

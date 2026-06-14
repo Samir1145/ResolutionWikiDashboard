@@ -6,3 +6,4 @@ nwjs/*
 node_modules/
 source/tiddlywiki/
 scratch_user_data/
+v8.log

@@ -21,17 +21,17 @@ node propagate-version.js
 # Create the output directories
 mkdir -p output
 mkdir -p output/mac64
-mkdir -p output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)
+mkdir -p output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)
 mkdir -p output/macapplesilicon
-mkdir -p output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)
+mkdir -p output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)
 mkdir -p output/win32
-mkdir -p output/win32/TiddlyDesktop-win32-v$(./bin/get-version-number)
+mkdir -p output/win32/ResolutionBazaar-win32-v$(./bin/get-version-number)
 mkdir -p output/win64
-mkdir -p output/win64/TiddlyDesktop-win64-v$(./bin/get-version-number)
+mkdir -p output/win64/ResolutionBazaar-win64-v$(./bin/get-version-number)
 mkdir -p output/linux32
-mkdir -p output/linux32/TiddlyDesktop-linux32-v$(./bin/get-version-number)
+mkdir -p output/linux32/ResolutionBazaar-linux32-v$(./bin/get-version-number)
 mkdir -p output/linux64
-mkdir -p output/linux64/TiddlyDesktop-linux64-v$(./bin/get-version-number)
+mkdir -p output/linux64/ResolutionBazaar-linux64-v$(./bin/get-version-number)
 
 # For each platform, copy the stock nw.js binaries overlaying the "source" directory (and icons and plist for the Mac)
 
@@ -48,12 +48,20 @@ fi
 # OS X 64-bit App
 build_mac64() {
 
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjs.app output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app
-cp -RH source output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw
-cp icons/app.icns output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/nw.icns
-cp Info.plist output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Info.plist
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjs.app output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app
+cp -RH source output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw
 
-for f in output/mac64/TiddlyDesktop-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/*.lproj
+# Compile dashboard.js to V8 bytecode
+if [ -x "nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjc" ]; then
+  echo "Compiling dashboard.js to bytecode for macOS 64-bit..."
+  nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjc output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw/js/dashboard.js output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw/js/dashboard.bin && \
+  rm output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw/js/dashboard.js
+fi
+
+cp icons/app.icns output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/nw.icns
+cp Info.plist output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Info.plist
+
+for f in output/mac64/ResolutionBazaar-mac64-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/*.lproj
 do
 	cp "./strings/InfoPlist.strings" "$f/InfoPlist.strings"
 done
@@ -63,42 +71,86 @@ done
 # OS X Apple Silicon App
 build_macapplesilicon() {
 
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-arm64/nwjs.app output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app
-cp -RH source output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw
-cp icons/app.icns output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/nw.icns
-cp Info.plist output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Info.plist
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-arm64/nwjs.app output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app
+cp -RH source output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/app.nw
+cp icons/app.icns output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/nw.icns
+cp Info.plist output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Info.plist
 
-for f in output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/*.lproj
+for f in output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app/Contents/Resources/*.lproj
 do
 	cp "./strings/InfoPlist.strings" "$f/InfoPlist.strings"
 done
 
-xattr -c output/macapplesilicon/TiddlyDesktop-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app
+xattr -c output/macapplesilicon/ResolutionBazaar-macapplesilicon-v$(./bin/get-version-number)/ResolutionBazaar.app
 
 }
 
 # Windows 64-bit App
 build_win64() {
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-win-x64/* output/win64/TiddlyDesktop-win64-v$(./bin/get-version-number)
-cp -RH source/* output/win64/TiddlyDesktop-win64-v$(./bin/get-version-number)
+local target_dir="output/win64/ResolutionBazaar-win64-v$(./bin/get-version-number)"
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-win-x64/* "$target_dir"
+
+# Create a temporary packaging directory
+rm -Rf tmp_packaging_win64
+cp -RH source tmp_packaging_win64
+# Compile dashboard.js to V8 bytecode
+if [ -x "nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjc" ]; then
+  echo "Compiling dashboard.js to bytecode for Windows 64-bit..."
+  nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjc tmp_packaging_win64/js/dashboard.js tmp_packaging_win64/js/dashboard.bin && \
+  rm tmp_packaging_win64/js/dashboard.js
+fi
+(cd tmp_packaging_win64 && zip -r "../$target_dir/package.nw" *)
+rm -Rf tmp_packaging_win64
+
+cat "$target_dir/nw.exe" "$target_dir/package.nw" > "$target_dir/ResolutionBazaar.exe"
+chmod +x "$target_dir/ResolutionBazaar.exe"
+rm "$target_dir/nw.exe"
+rm "$target_dir/package.nw"
 }
 
 # # Windows 32-bit App
 build_win32() {
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-win-ia32/* output/win32/TiddlyDesktop-win32-v$(./bin/get-version-number)
-cp -RH source/* output/win32/TiddlyDesktop-win32-v$(./bin/get-version-number)
+local target_dir="output/win32/ResolutionBazaar-win32-v$(./bin/get-version-number)"
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-win-ia32/* "$target_dir"
+(cd source && zip -r "../$target_dir/package.nw" *)
+cat "$target_dir/nw.exe" "$target_dir/package.nw" > "$target_dir/ResolutionBazaar.exe"
+chmod +x "$target_dir/ResolutionBazaar.exe"
+rm "$target_dir/nw.exe"
+rm "$target_dir/package.nw"
 }
 
 # # Linux 64-bit App
 build_linux64() {
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-linux-x64/* output/linux64/TiddlyDesktop-linux64-v$(./bin/get-version-number)
-cp -RH source/* output/linux64/TiddlyDesktop-linux64-v$(./bin/get-version-number)
+local target_dir="output/linux64/ResolutionBazaar-linux64-v$(./bin/get-version-number)"
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-linux-x64/* "$target_dir"
+
+# Create a temporary packaging directory
+rm -Rf tmp_packaging_linux64
+cp -RH source tmp_packaging_linux64
+# Compile dashboard.js to V8 bytecode
+if [ -x "nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjc" ]; then
+  echo "Compiling dashboard.js to bytecode for Linux 64-bit..."
+  nwjs/nwjs-sdk-v${NWJS_VERSION}-osx-x64/nwjc tmp_packaging_linux64/js/dashboard.js tmp_packaging_linux64/js/dashboard.bin && \
+  rm tmp_packaging_linux64/js/dashboard.js
+fi
+(cd tmp_packaging_linux64 && zip -r "../$target_dir/package.nw" *)
+rm -Rf tmp_packaging_linux64
+
+cat "$target_dir/nw" "$target_dir/package.nw" > "$target_dir/ResolutionBazaar"
+chmod +x "$target_dir/ResolutionBazaar"
+rm "$target_dir/nw"
+rm "$target_dir/package.nw"
 }
 
 # # Linux 32-bit App
 build_linux32() {
-cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-linux-ia32/* output/linux32/TiddlyDesktop-linux32-v$(./bin/get-version-number)
-cp -RH source/* output/linux32/TiddlyDesktop-linux32-v$(./bin/get-version-number)
+local target_dir="output/linux32/ResolutionBazaar-linux32-v$(./bin/get-version-number)"
+cp -RH nwjs/nwjs-sdk-v${NWJS_VERSION}-linux-ia32/* "$target_dir"
+(cd source && zip -r "../$target_dir/package.nw" *)
+cat "$target_dir/nw" "$target_dir/package.nw" > "$target_dir/ResolutionBazaar"
+chmod +x "$target_dir/ResolutionBazaar"
+rm "$target_dir/nw"
+rm "$target_dir/package.nw"
 }
 
 # # Linux AppImage
@@ -129,10 +181,10 @@ chmod u+x output/appimagetool-$ARCH.AppImage
 mkdir -p $appdir
 mkdir -p $appdir/usr/{bin,lib,share}
 mkdir -p $appdir/usr/share/fonts/truetype/dejavu
-cp icons/app-icon1024.png $appdir/tiddlydesktop.png
+cp icons/app-icon1024.png $appdir/resolutionbazaar.png
 cp linux/AppRun $appdir/
-cp linux/tiddlydesktop.desktop $appdir/
-cp -r output/$package_arch/TiddlyDesktop-$package_arch-v$(./bin/get-version-number)/* $appdir/usr/bin/
+cp linux/resolutionbazaar.desktop $appdir/
+cp -r output/$package_arch/ResolutionBazaar-$package_arch-v$(./bin/get-version-number)/* $appdir/usr/bin/
 
 libraries=$(dpkg -L $runtime_dependencies | grep "\.so" 2>/dev/null)
 for f in $libraries; do
@@ -141,7 +193,7 @@ done
 
 dpkg -L $font_packages | grep "\.ttf" 2>/dev/null | xargs -I '{}' -- cp '{}' $appdir/usr/share/fonts/truetype/dejavu/
 VERSION=$(./bin/get-version-number)
-ARCH=$appimagetool_arch ./output/appimagetool-$ARCH.AppImage --no-appstream $appdir output/tiddlydesktop-$package_arch-v$(./bin/get-version-number).AppImage
+ARCH=$appimagetool_arch ./output/appimagetool-$ARCH.AppImage --no-appstream $appdir output/resolutionbazaar-$package_arch-v$(./bin/get-version-number).AppImage
 }
 
 if [ "$CI" = "true" ]; then

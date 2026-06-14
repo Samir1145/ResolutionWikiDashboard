@@ -1,8 +1,9 @@
 {
-    "name": "TiddlyDesktop",
+    "name": "ResolutionBazaar",
     "main": "./html/main.html",
     "window": {
-        "id": "tiddlydesktop://",
+        "id": "resolutionbazaar://",
+        "title": "Resolution Bazaar",
         "show": false,
         "icon": "images/app-icon.png",
         "width": 980,

@@ -9,41 +9,41 @@ VERSION=$(./bin/get-version-number)
 # Zip them up
 package_win32() {
 pushd ./output/win32
-zip -r "../tiddlydesktop-win32-v$VERSION.zip" *
+zip -r "../resolutionbazaar-win32-v$VERSION.zip" *
 popd
 }
 
 package_win64() {
 pushd ./output/win64
-zip -r "../tiddlydesktop-win64-v$VERSION.zip" *
+zip -r "../resolutionbazaar-win64-v$VERSION.zip" *
 popd
 }
 
 package_mac64() {
 pushd ./output/mac64
-sudo xattr -rc "./TiddlyDesktop-mac64-v$VERSION/TiddlyDesktop.app"
-sudo codesign --force --deep --sign - "./TiddlyDesktop-mac64-v$VERSION/TiddlyDesktop.app"
-zip --symlinks -r "../tiddlydesktop-mac64-v$VERSION.zip" *
+sudo xattr -rc "./ResolutionBazaar-mac64-v$VERSION/ResolutionBazaar.app"
+sudo codesign --force --deep --sign - "./ResolutionBazaar-mac64-v$VERSION/ResolutionBazaar.app"
+zip --symlinks -r "../resolutionbazaar-mac64-v$VERSION.zip" *
 popd
 }
 
 package_macapplesilicon() {
 pushd ./output/macapplesilicon
-sudo xattr -rc "./TiddlyDesktop-macapplesilicon-v$VERSION/TiddlyDesktop.app"
-sudo codesign --force --deep --sign - "./TiddlyDesktop-macapplesilicon-v$VERSION/TiddlyDesktop.app"
-zip --symlinks -r "../tiddlydesktop-macapplesilicon-v$VERSION.zip" *
+sudo xattr -rc "./ResolutionBazaar-macapplesilicon-v$VERSION/ResolutionBazaar.app"
+sudo codesign --force --deep --sign - "./ResolutionBazaar-macapplesilicon-v$VERSION/ResolutionBazaar.app"
+zip --symlinks -r "../resolutionbazaar-macapplesilicon-v$VERSION.zip" *
 popd
 }
 
 package_linux32() {
 pushd ./output/linux32
-zip -r "../tiddlydesktop-linux32-v$VERSION.zip" *
+zip -r "../resolutionbazaar-linux32-v$VERSION.zip" *
 popd
 }
 
 package_linux64() {
 pushd ./output/linux64
-zip -r "../tiddlydesktop-linux64-v$VERSION.zip" *
+zip -r "../resolutionbazaar-linux64-v$VERSION.zip" *
 popd
 }
 

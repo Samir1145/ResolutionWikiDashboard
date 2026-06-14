@@ -27,14 +27,14 @@ var tray = new gui.Tray({
 	title: "",
 	icon: "images/tray_icon_" + (process.platform === "darwin" ? "mono" : "color") + (window.devicePixelRatio > 1 ? "@2x" : "") + ".png",
 	alticon: "",
-	tooltip: "TiddlyDesktop",
+	tooltip: "Resolution Bazaar",
 	iconsAreTemplates: true
 });
 
 // Give it a menu
 var trayMenu = new gui.Menu();
 trayMenu.append(new gui.MenuItem({
-	label: "TiddlyDesktop v" + require("../package.json").version,
+	label: "Resolution Bazaar v" + require("../package.json").version,
 	enabled: false
 }));
 trayMenu.append(new gui.MenuItem({

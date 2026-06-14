@@ -194,8 +194,8 @@ function loadWikis() {
 
       // Open report using TiddlyDesktop's native window manager (preserves saving)
       const openBtn = document.createElement("button");
-      openBtn.className = "open-link";
-      openBtn.style.cssText = "background:none;border:none;cursor:pointer;color:var(--link-color,#0066ff);margin-right:1rem;text-decoration:underline;font-size:inherit;";
+      openBtn.className = "btn";
+      openBtn.style.background = "var(--primary-accent)";
       openBtn.textContent = "Open";
       openBtn.addEventListener("click", () => {
         // window.$tw is injected by main.js when it opens this window
@@ -218,6 +218,19 @@ function loadWikis() {
         }
       });
 
+      // Reveal report on filesystem
+      const revealBtn = document.createElement("button");
+      revealBtn.className = "btn open-btn";
+      revealBtn.textContent = "File";
+      revealBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        try {
+          require("nw.gui").Shell.showItemInFolder(w.filePath);
+        } catch (err) {
+          alert("Failed to reveal file: " + err.message);
+        }
+      });
+
       // Remove report reference
       const deleteBtn = document.createElement("button");
       deleteBtn.className = "btn delete-btn";
@@ -231,6 +244,7 @@ function loadWikis() {
       });
 
       actions.appendChild(openBtn);
+      actions.appendChild(revealBtn);
       actions.appendChild(deleteBtn);
       item.appendChild(nameSpan);
       item.appendChild(actions);
@@ -249,7 +263,7 @@ function loadWikis() {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
+function boot() {
   showView("dashboardView");
   initDashboard();
 
@@ -284,4 +298,10 @@ window.addEventListener("DOMContentLoaded", () => {
     showView("dashboardView");
     if (window._dashboardRefresh) window._dashboardRefresh();
   });
-});
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
+}

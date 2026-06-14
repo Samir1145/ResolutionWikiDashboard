@@ -12,15 +12,15 @@
 , gtk3
 }:
 let
-  launcher = writeScript "tiddlydesktop" ''
+  launcher = writeScript "resolutionbazaar" ''
     #! ${bash}/bin/bash
 
-    ${nwjs}/bin/nw @out@/lib/tiddlydesktop $@
+    ${nwjs}/bin/nw @out@/lib/resolutionbazaar $@
   '';
 
   packageJson = builtins.fromJSON (builtins.readFile ./package.json);
 in stdenv.mkDerivation rec {
-  pname = "tiddlydesktop";
+  pname = "resolutionbazaar";
   version = "${packageJson.version}";
 
   src = ./.;
@@ -44,12 +44,12 @@ in stdenv.mkDerivation rec {
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin
-    mkdir -p $out/lib/tiddlydesktop
+    mkdir -p $out/lib/resolutionbazaar
     mkdir -p $out/share/icons/hicolor
 
-    cp -R source/* $out/lib/tiddlydesktop/
-    cp ${launcher} $out/bin/tiddlydesktop
-    substituteAllInPlace $out/bin/tiddlydesktop
+    cp -R source/* $out/lib/resolutionbazaar/
+    cp ${launcher} $out/bin/resolutionbazaar
+    substituteAllInPlace $out/bin/resolutionbazaar
 
     for n in 16 32 48 64 128 256 1024; do
       size=$n"x"$n
@@ -65,14 +65,14 @@ in stdenv.mkDerivation rec {
       name = pname;
       exec = pname;
       icon = pname;
-      desktopName = "Tiddly Desktop";
+      desktopName = "Resolution Bazaar";
       categories = ["Utility" "TextEditor"];
     })
   ];
 
   meta = with lib; {
     homepage = "https://github.com/TiddlyWiki/TiddlyDesktop";
-    description = "A custom desktop browser for TiddlyWiki 5 and TiddlyWiki Classic, based on nw.js";
+    description = "Resolution Bazaar - custom desktop browser and client";
     license = licenses.bsd0;
     maintainers = with maintainers; [ emmanuelrosa ];
     platforms = [ "x86_64-linux" ];
