@@ -588,6 +588,47 @@ function boot() {
     showView("dashboardView");
     if (window._dashboardRefresh) window._dashboardRefresh();
   });
+
+  // Settings dropdown toggle
+  const settingsBtn = document.getElementById("settingsBtn");
+  const settingsDropdown = document.getElementById("settingsDropdown");
+  if (settingsBtn && settingsDropdown) {
+    settingsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      settingsDropdown.style.display = (settingsDropdown.style.display === "none" || settingsDropdown.style.display === "") ? "flex" : "none";
+    });
+
+    // Close settings dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!settingsBtn.contains(e.target) && !settingsDropdown.contains(e.target)) {
+        settingsDropdown.style.display = "none";
+      }
+    });
+  }
+
+  // About Modal trigger
+  const aboutBtn = document.getElementById("aboutBtn");
+  const aboutModal = document.getElementById("aboutModal");
+  const closeAboutBtn = document.getElementById("closeAboutBtn");
+  
+  if (aboutBtn && aboutModal && closeAboutBtn) {
+    aboutBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (settingsDropdown) settingsDropdown.style.display = "none";
+      aboutModal.style.display = "flex";
+    });
+
+    closeAboutBtn.addEventListener("click", () => {
+      aboutModal.style.display = "none";
+    });
+
+    // Close modal when clicking outside the modal content card
+    aboutModal.addEventListener("click", (e) => {
+      if (e.target === aboutModal) {
+        aboutModal.style.display = "none";
+      }
+    });
+  }
 }
 
 if (document.readyState === "loading") {

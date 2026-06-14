@@ -543,21 +543,169 @@
       color: var(--text-color);
       background: rgba(255, 255, 255, 0.1);
     }
+
+    /* SETTINGS CONTAINER & DROPDOWN */
+    .settings-container {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      z-index: 1000;
+    }
+
+    .settings-toggle-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.25rem;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .settings-toggle-btn:hover {
+      transform: scale(1.05) rotate(30deg);
+      border-color: var(--primary-accent);
+    }
+
+    .settings-dropdown {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      width: 220px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      padding: 1rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .settings-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+
+    .settings-btn {
+      background: var(--tertiary-accent);
+      color: var(--btn-text);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .settings-btn:hover {
+      background: var(--tertiary-hover);
+      border-color: var(--primary-accent);
+    }
+
+    /* ABOUT MODAL OVERLAY */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      color: var(--text-color);
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-content p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
   </style>
 </head>
 <body>
   <!-- MAIN DASHBOARD VIEW -->
   <div id="dashboardView">
-    <!-- THEME TOGGLE BUTTON -->
-    <button id="themeToggle" class="theme-toggle" aria-label="Toggle Theme">🌙</button>
+    <!-- SETTINGS DROPDOWN MENU -->
+    <div class="settings-container">
+      <button id="settingsBtn" class="settings-toggle-btn" aria-label="Open Settings">⚙️</button>
+      <div id="settingsDropdown" class="settings-dropdown">
+        <div class="settings-header">Settings</div>
+        <div class="settings-item">
+          <span>Appearance</span>
+          <button id="themeToggle" class="settings-btn" aria-label="Toggle Theme">🌙 Dark Mode</button>
+        </div>
+        <div class="settings-item" style="margin-top: 0.25rem;">
+          <span>Application</span>
+          <button id="aboutBtn" class="settings-btn">About App</button>
+        </div>
+      </div>
+    </div>
     
     <!-- WORKSPACE TAB BAR -->
     <div id="workspaceBar" class="workspace-bar" style="display:none;">
       <div id="workspaceTabs" style="display:flex; gap:0.5rem; flex-wrap:wrap;"></div>
-      <button id="addWorkspaceBtn" class="btn open-btn">+ Workspace</button>
       <div class="workspace-actions">
-        <button id="renameWorkspaceBtn" class="btn rename-btn">Rename WS</button>
-        <button id="deleteWorkspaceBtn" class="btn delete-btn">Delete WS</button>
+        <button id="addWorkspaceBtn" class="btn open-btn">Add Workspace</button>
+        <button id="renameWorkspaceBtn" class="btn rename-btn">Rename</button>
+        <button id="deleteWorkspaceBtn" class="btn delete-btn">Delete</button>
       </div>
     </div>
 
@@ -684,7 +832,7 @@
 
       const updateIcon = () => {
         const isLight = document.documentElement.classList.contains("light-theme");
-        themeToggle.textContent = isLight ? "☀️" : "🌙";
+        themeToggle.textContent = isLight ? "☀️ Light Mode" : "🌙 Dark Mode";
       };
 
       // Set initial state from class list
@@ -697,5 +845,15 @@
       });
     });
   </script>
+  <!-- ABOUT MODAL OVERLAY -->
+  <div id="aboutModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h3>About Resolution Bazaar</h3>
+      <p>A native desktop dashboard for TiddlyWiki workspace organization and Kanban task tracking.</p>
+      <p style="margin-top: 0.75rem;"><strong>Version:</strong> v0.0.22</p>
+      <p><strong>Powered by:</strong> TiddlyDesktop & NW.js</p>
+      <button id="closeAboutBtn" class="btn open-btn" style="margin-top: 1.5rem; width: 100px;">Close</button>
+    </div>
+  </div>
 </body>
 </html>
