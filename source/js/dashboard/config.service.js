@@ -19,20 +19,32 @@ function ensureConfigDir() {
 
 function readConfig() {
   ensureConfigDir();
+  const defaultWorkspace = { id: "default", name: "Default Workspace", projects: [] };
   if (!fs.existsSync(CONFIG_FILE)) {
-    // Default config – an empty array of projects
-    const defaultConfig = { projects: [] };
+    const defaultConfig = { workspaces: [defaultWorkspace], activeWorkspaceId: "default" };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2), "utf8");
     return defaultConfig;
   }
   try {
     const raw = fs.readFileSync(CONFIG_FILE, "utf8");
     const parsed = JSON.parse(raw);
-    if (!parsed.projects) parsed.projects = [];
+    
+    // Migrate old configuration format (projects list at root) to workspaces format
+    if (parsed.projects && !parsed.workspaces) {
+      parsed.workspaces = [{ id: "default", name: "Default Workspace", projects: parsed.projects }];
+      parsed.activeWorkspaceId = "default";
+      delete parsed.projects;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(parsed, null, 2), "utf8");
+    }
+    
+    if (!parsed.workspaces) {
+      parsed.workspaces = [defaultWorkspace];
+      parsed.activeWorkspaceId = "default";
+    }
     return parsed;
   } catch (e) {
     console.error("Failed to parse dashboard config", e);
-    return { projects: [] };
+    return { workspaces: [defaultWorkspace], activeWorkspaceId: "default" };
   }
 }
 
