@@ -86,7 +86,11 @@ function addProject(projectPath) {
   ws.projects.push({
     id: projectPath,
     name: name,
-    reports: []
+    boards: [{
+      id: "board_default",
+      name: "Main Board",
+      reports: []
+    }]
   });
   config.setConfig(cfg);
 }
@@ -114,11 +118,19 @@ function renameProject(projectPath, newName) {
 
 function listProjects() {
   const ws = getActiveWorkspace();
-  return ws.projects.map(p => ({
-    id: p.id,
-    name: p.name,
-    wikiCount: p.reports ? p.reports.length : 0
-  }));
+  return ws.projects.map(p => {
+    let wikiCount = 0;
+    if (p.boards) {
+      p.boards.forEach(b => {
+        if (b.reports) wikiCount += b.reports.length;
+      });
+    }
+    return {
+      id: p.id,
+      name: p.name,
+      wikiCount: wikiCount
+    };
+  });
 }
 
 function getProject(projectPath) {
@@ -126,64 +138,133 @@ function getProject(projectPath) {
   return ws.projects.find(p => p.id === projectPath);
 }
 
-// ─── Report/Wiki Management (Scoped) ────────────────────────────────────────
+// ─── Board/Swimlane Management (Scoped) ──────────────────────────────────────
 
-function addReportToProject(projectPath, filePath) {
+function addBoard(projectPath, name) {
   const cfg = config.getConfig();
   const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
   if (!ws) throw new Error("Active workspace not found.");
   const proj = ws.projects.find(p => p.id === projectPath);
   if (!proj) throw new Error("Project not found.");
   
-  if (!proj.reports) proj.reports = [];
-  const exists = proj.reports.find(r => r.filePath === filePath);
-  if (exists) throw new Error("Report is already added to this project.");
-  
-  const name = path.basename(filePath);
-  proj.reports.push({
+  if (!proj.boards) proj.boards = [];
+  const boardId = "board_" + Date.now();
+  proj.boards.push({
+    id: boardId,
     name: name,
-    filePath: filePath,
-    status: "todo" // default status for the Kanban board
+    reports: []
   });
-  
   config.setConfig(cfg);
+  return boardId;
 }
 
-function removeReportFromProject(projectPath, filePath) {
+function removeBoard(projectPath, boardId) {
   const cfg = config.getConfig();
   const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
   if (ws) {
     const proj = ws.projects.find(p => p.id === projectPath);
-    if (proj && proj.reports) {
-      proj.reports = proj.reports.filter(r => r.filePath !== filePath);
+    if (proj && proj.boards) {
+      proj.boards = proj.boards.filter(b => b.id !== boardId);
       config.setConfig(cfg);
     }
   }
 }
 
-function updateReportStatus(projectPath, filePath, status) {
+function renameBoard(projectPath, boardId, newName) {
   const cfg = config.getConfig();
   const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
   if (ws) {
     const proj = ws.projects.find(p => p.id === projectPath);
-    if (proj && proj.reports) {
-      const rep = proj.reports.find(r => r.filePath === filePath);
-      if (rep) {
-        rep.status = status;
+    if (proj && proj.boards) {
+      const board = proj.boards.find(b => b.id === boardId);
+      if (board) {
+        board.name = newName;
         config.setConfig(cfg);
       }
     }
   }
 }
 
-function listReportsByPath(projectPath) {
+function listBoards(projectPath) {
   const proj = getProject(projectPath);
-  if (proj && proj.reports) {
-    // Ensure all existing reports have a status
-    proj.reports.forEach(r => {
-      if (!r.status) r.status = "todo";
-    });
-    return proj.reports;
+  if (proj && proj.boards) {
+    return proj.boards.map(b => ({
+      id: b.id,
+      name: b.name,
+      reportCount: b.reports ? b.reports.length : 0
+    }));
+  }
+  return [];
+}
+
+// ─── Report/Wiki Management (Scoped) ────────────────────────────────────────
+
+function addReportToBoard(projectPath, boardId, filePath) {
+  const cfg = config.getConfig();
+  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
+  if (!ws) throw new Error("Active workspace not found.");
+  const proj = ws.projects.find(p => p.id === projectPath);
+  if (!proj) throw new Error("Project not found.");
+  if (!proj.boards) proj.boards = [];
+  const board = proj.boards.find(b => b.id === boardId);
+  if (!board) throw new Error("Board not found.");
+  
+  if (!board.reports) board.reports = [];
+  const exists = board.reports.find(r => r.filePath === filePath);
+  if (exists) throw new Error("Report is already added to this board.");
+  
+  const name = path.basename(filePath);
+  board.reports.push({
+    name: name,
+    filePath: filePath,
+    status: "todo"
+  });
+  config.setConfig(cfg);
+}
+
+function removeReportFromBoard(projectPath, boardId, filePath) {
+  const cfg = config.getConfig();
+  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
+  if (ws) {
+    const proj = ws.projects.find(p => p.id === projectPath);
+    if (proj && proj.boards) {
+      const board = proj.boards.find(b => b.id === boardId);
+      if (board && board.reports) {
+        board.reports = board.reports.filter(r => r.filePath !== filePath);
+        config.setConfig(cfg);
+      }
+    }
+  }
+}
+
+function updateReportStatusInBoard(projectPath, boardId, filePath, status) {
+  const cfg = config.getConfig();
+  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
+  if (ws) {
+    const proj = ws.projects.find(p => p.id === projectPath);
+    if (proj && proj.boards) {
+      const board = proj.boards.find(b => b.id === boardId);
+      if (board && board.reports) {
+        const rep = board.reports.find(r => r.filePath === filePath);
+        if (rep) {
+          rep.status = status;
+          config.setConfig(cfg);
+        }
+      }
+    }
+  }
+}
+
+function listReportsByBoard(projectPath, boardId) {
+  const proj = getProject(projectPath);
+  if (proj && proj.boards) {
+    const board = proj.boards.find(b => b.id === boardId);
+    if (board && board.reports) {
+      board.reports.forEach(r => {
+        if (!r.status) r.status = "todo";
+      });
+      return board.reports;
+    }
   }
   return [];
 }
@@ -202,8 +283,13 @@ module.exports = {
   listProjects,
   getProject,
   
-  addReportToProject,
-  removeReportFromProject,
-  updateReportStatus,
-  listReportsByPath
+  addBoard,
+  removeBoard,
+  renameBoard,
+  listBoards,
+  
+  addReportToBoard,
+  removeReportFromBoard,
+  updateReportStatusInBoard,
+  listReportsByBoard
 };

@@ -29,18 +29,51 @@ function readConfig() {
     const raw = fs.readFileSync(CONFIG_FILE, "utf8");
     const parsed = JSON.parse(raw);
     
+    let migrated = false;
+    
     // Migrate old configuration format (projects list at root) to workspaces format
     if (parsed.projects && !parsed.workspaces) {
       parsed.workspaces = [{ id: "default", name: "Default Workspace", projects: parsed.projects }];
       parsed.activeWorkspaceId = "default";
       delete parsed.projects;
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(parsed, null, 2), "utf8");
+      migrated = true;
     }
     
     if (!parsed.workspaces) {
       parsed.workspaces = [defaultWorkspace];
       parsed.activeWorkspaceId = "default";
+      migrated = true;
     }
+
+    // Migrate projects: replace flat reports with boards array
+    parsed.workspaces.forEach(ws => {
+      if (ws.projects) {
+        ws.projects.forEach(proj => {
+          if (proj.reports && !proj.boards) {
+            proj.boards = [{
+              id: "board_default",
+              name: "Main Board",
+              reports: proj.reports
+            }];
+            delete proj.reports;
+            migrated = true;
+          }
+          if (!proj.boards) {
+            proj.boards = [{
+              id: "board_default",
+              name: "Main Board",
+              reports: []
+            }];
+            migrated = true;
+          }
+        });
+      }
+    });
+
+    if (migrated) {
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(parsed, null, 2), "utf8");
+    }
+    
     return parsed;
   } catch (e) {
     console.error("Failed to parse dashboard config", e);

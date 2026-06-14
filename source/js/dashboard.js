@@ -13,6 +13,7 @@ function showView(id) {
 // ─── State ───────────────────────────────────────────────────────────────────
 let currentProjectPath = null;
 let activeDragFilePath = null;
+let activeBoardId = null;
 
 // ─── Workspace View ──────────────────────────────────────────────────────────
 function renderWorkspaces() {
@@ -249,22 +250,106 @@ function openWikiListView(projectPath, projectName) {
   currentProjectPath = projectPath;
 
   const titleEl = document.getElementById("projectTitle");
-  const searchInput = document.getElementById("searchWikis");
-  const addWikiBtn = document.getElementById("addWikiBtn");
-
   titleEl.textContent = `Project: ${projectName}`;
-  searchInput.placeholder = "Search reports...";
-  addWikiBtn.textContent = "+ Add Report";
+
+  // Load boards and default to the first one
+  const boards = projectService.listBoards(currentProjectPath);
+  if (boards.length > 0) {
+    activeBoardId = boards[0].id;
+  } else {
+    activeBoardId = "board_default";
+  }
 
   showView("wikiListView");
+  renderBoardsSidebar();
   loadWikis();
+}
+
+function renderBoardsSidebar() {
+  const listEl = document.getElementById("boardList");
+  const boards = projectService.listBoards(currentProjectPath);
+
+  // Clear list
+  while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+
+  boards.forEach(b => {
+    const li = document.createElement("li");
+    li.className = "board-nav-item" + (b.id === activeBoardId ? " active" : "");
+    
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = `${b.name} (${b.reportCount})`;
+    li.appendChild(nameSpan);
+
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "board-nav-item-actions";
+
+    // Rename Board Button
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "icon-btn";
+    renameBtn.title = "Rename Board";
+    renameBtn.textContent = "✏️";
+    renameBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const newName = prompt("Enter new board name:", b.name);
+      if (newName && newName.trim() && newName.trim() !== b.name) {
+        try {
+          projectService.renameBoard(currentProjectPath, b.id, newName.trim());
+          renderBoardsSidebar();
+        } catch (err) {
+          alert("Error: " + err.message);
+        }
+      }
+    });
+
+    // Delete Board Button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "icon-btn";
+    deleteBtn.title = "Delete Board";
+    deleteBtn.textContent = "🗑️";
+    deleteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (boards.length <= 1) {
+        alert("A project must have at least one board (swimlane).");
+        return;
+      }
+      if (!confirm(`Are you sure you want to delete board "${b.name}"? All wiki cards inside it will be removed.`)) return;
+      try {
+        projectService.removeBoard(currentProjectPath, b.id);
+        if (activeBoardId === b.id) {
+          const remaining = projectService.listBoards(currentProjectPath);
+          activeBoardId = remaining[0].id;
+        }
+        renderBoardsSidebar();
+        loadWikis();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    });
+
+    actionsDiv.appendChild(renameBtn);
+    actionsDiv.appendChild(deleteBtn);
+    li.appendChild(actionsDiv);
+
+    // Switch board on click
+    li.addEventListener("click", () => {
+      activeBoardId = b.id;
+      renderBoardsSidebar();
+      loadWikis();
+    });
+
+    listEl.appendChild(li);
+  });
+
+  // Update active board title in main area
+  const activeBoard = boards.find(x => x.id === activeBoardId);
+  document.getElementById("activeBoardTitle").textContent = activeBoard ? activeBoard.name : "Board";
 }
 
 function loadWikis() {
   const term = document.getElementById("searchWikis").value.toLowerCase();
   
   try {
-    const wikis = projectService.listReportsByPath(currentProjectPath)
+    const wikis = projectService.listReportsByBoard(currentProjectPath, activeBoardId)
       .filter(w => w.name.toLowerCase().includes(term));
     
     renderKanbanBoard(wikis);
@@ -375,8 +460,9 @@ function createKanbanCard(wiki) {
     e.stopPropagation();
     if (!confirm(`Remove "${wiki.name}" reference from this board? (No files will be deleted)`)) return;
     try {
-      projectService.removeReportFromProject(currentProjectPath, wiki.filePath);
+      projectService.removeReportFromBoard(currentProjectPath, activeBoardId, wiki.filePath);
       loadWikis();
+      renderBoardsSidebar();
     } catch (err) {
       alert("Failed to remove report: " + err.message);
     }
@@ -430,9 +516,9 @@ function initDragAndDrop() {
       col.classList.remove("drag-over");
       
       const filePath = e.dataTransfer.getData("text/plain") || activeDragFilePath;
-      if (filePath && currentProjectPath) {
+      if (filePath && currentProjectPath && activeBoardId) {
         try {
-          projectService.updateReportStatus(currentProjectPath, filePath, status);
+          projectService.updateReportStatusInBoard(currentProjectPath, activeBoardId, filePath, status);
           loadWikis();
         } catch (err) {
           console.error("Failed to update status on drop:", err);
@@ -452,10 +538,11 @@ function boot() {
   const addWikiBtn  = document.getElementById("addWikiBtn");
   const searchWikis = document.getElementById("searchWikis");
   const backBtn     = document.getElementById("backBtn");
+  const addBoardBtn = document.getElementById("addBoardBtn");
 
   // File dialog to add wiki reference
   addWikiBtn.addEventListener("click", () => {
-    if (!currentProjectPath) return;
+    if (!currentProjectPath || !activeBoardId) return;
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".html,.htm,.tid";
@@ -463,13 +550,30 @@ function boot() {
       const file = evt.target.files[0];
       if (!file || !file.path) return;
       try { 
-        projectService.addReportToProject(currentProjectPath, file.path);
+        projectService.addReportToBoard(currentProjectPath, activeBoardId, file.path);
         loadWikis();
+        renderBoardsSidebar();
       } catch (err) {
         alert("Failed to add report: " + err.message);
       }
     };
     input.click();
+  });
+
+  // Board creation button
+  addBoardBtn.addEventListener("click", () => {
+    if (!currentProjectPath) return;
+    const name = prompt("Enter name for new board (swimlane):");
+    if (name && name.trim()) {
+      try {
+        const newId = projectService.addBoard(currentProjectPath, name.trim());
+        activeBoardId = newId;
+        renderBoardsSidebar();
+        loadWikis();
+      } catch (err) {
+        alert("Failed to add board: " + err.message);
+      }
+    }
   });
 
   // Filter cards on input
@@ -480,6 +584,7 @@ function boot() {
   // Back navigation
   backBtn.addEventListener("click", () => {
     currentProjectPath = null;
+    activeBoardId = null;
     showView("dashboardView");
     if (window._dashboardRefresh) window._dashboardRefresh();
   });

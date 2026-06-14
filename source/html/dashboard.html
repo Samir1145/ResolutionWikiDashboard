@@ -421,6 +421,128 @@
       display: flex;
       align-items: center;
     }
+
+    /* PROJECT LAYOUT SPLIT */
+    .project-layout {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 120px);
+      overflow: hidden;
+      margin-top: 1rem;
+      gap: 1.5rem;
+    }
+    
+    .project-sidebar {
+      width: 250px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    
+    .board-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .board-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .board-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text-color);
+    }
+    
+    .sidebar-section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .board-nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .board-nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .board-nav-item:hover {
+      color: var(--text-color);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border-color);
+    }
+    
+    .board-nav-item.active {
+      color: #ffffff;
+      background: var(--primary-accent);
+      border-color: var(--primary-accent);
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+    }
+    
+    .board-nav-item-actions {
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .board-nav-item:hover .board-nav-item-actions {
+      opacity: 1;
+    }
+    
+    .board-nav-item-actions .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .board-nav-item-actions .icon-btn:hover {
+      color: var(--text-color);
+      background: rgba(255, 255, 255, 0.1);
+    }
   </style>
 </head>
 <body>
@@ -446,31 +568,51 @@
   </div>
 
   <!-- WIKI KANBAN LIST VIEW -->
-  <div id="wikiListView" style="display:none;">
+  <div id="wikiListView" style="display:none; height: 100vh; flex-direction: column;">
     <div class="wiki-list-header">
       <button id="backBtn" class="btn back-btn">← Back to Projects</button>
       <h1 id="projectTitle" class="project-title">Project: </h1>
-      <button id="addWikiBtn" class="btn add-btn">+ Add Report</button>
     </div>
-    <input type="text" id="searchWikis" placeholder="Search reports..." />
     
-    <!-- KANBAN BOARD -->
-    <div class="kanban-board">
-      <!-- TO DO COLUMN -->
-      <div class="kanban-column" id="col-todo">
-        <h3>To Do <span class="col-count" id="count-todo">0</span></h3>
-        <div class="card-list" id="list-todo"></div>
-      </div>
-      <!-- IN PROGRESS COLUMN -->
-      <div class="kanban-column" id="col-progress">
-        <h3>In Progress <span class="col-count" id="count-progress">0</span></h3>
-        <div class="card-list" id="list-progress"></div>
-      </div>
-      <!-- COMPLETED COLUMN -->
-      <div class="kanban-column" id="col-done">
-        <h3>Completed <span class="col-count" id="count-done">0</span></h3>
-        <div class="card-list" id="list-done"></div>
-      </div>
+    <div class="project-layout">
+      <!-- SIDEBAR FOR SWIMLANES / BOARDS -->
+      <aside class="project-sidebar">
+        <div class="sidebar-section-title">
+          <span>Boards (Swimlanes)</span>
+          <button id="addBoardBtn" class="btn open-btn" style="padding: 0.15rem 0.5rem; font-size: 0.9rem; font-weight: bold; margin: 0;" title="Add Board">+</button>
+        </div>
+        <ul id="boardList" class="board-nav-list">
+          <!-- Dynamic board items -->
+        </ul>
+      </aside>
+
+      <!-- KANBAN BOARD CONTENT -->
+      <main class="board-content">
+        <div class="board-header-row">
+          <h2 id="activeBoardTitle" class="board-title">Main Board</h2>
+          <button id="addWikiBtn" class="btn add-btn">+ Add Report</button>
+        </div>
+        <input type="text" id="searchWikis" placeholder="Search reports..." />
+        
+        <!-- KANBAN BOARD -->
+        <div class="kanban-board">
+          <!-- TO DO COLUMN -->
+          <div class="kanban-column" id="col-todo">
+            <h3>To Do <span class="col-count" id="count-todo">0</span></h3>
+            <div class="card-list" id="list-todo"></div>
+          </div>
+          <!-- IN PROGRESS COLUMN -->
+          <div class="kanban-column" id="col-progress">
+            <h3>In Progress <span class="col-count" id="count-progress">0</span></h3>
+            <div class="card-list" id="list-progress"></div>
+          </div>
+          <!-- COMPLETED COLUMN -->
+          <div class="kanban-column" id="col-done">
+            <h3>Completed <span class="col-count" id="count-done">0</span></h3>
+            <div class="card-list" id="list-done"></div>
+          </div>
+        </div>
+      </main>
     </div>
   </div>
 
