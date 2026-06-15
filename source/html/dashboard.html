@@ -992,16 +992,15 @@
 
     /* Analyse button on cards */
     .analyse-btn {
-      background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(59,130,246,0.3)) !important;
-      border: 1px solid rgba(124,58,237,0.4) !important;
-      color: #c4b5fd !important;
+      background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
+      border: 1px solid #2563eb !important;
+      color: #ffffff !important;
     }
     .analyse-btn:hover {
-      background: linear-gradient(135deg, rgba(124,58,237,0.5), rgba(59,130,246,0.5)) !important;
-      border-color: #7c3aed !important;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+      border-color: #3b82f6 !important;
     }
 
-    /* Analyse Basket styling */
     .analyse-basket-dropzone {
       border: 2px dashed var(--border-color);
       border-radius: 8px;
@@ -1273,93 +1272,44 @@
       });
     });
   </script>
-  <!-- AGENT PANEL MODAL -->
-  <div id="agentPanelOverlay" class="agent-panel-overlay" style="display: none;">
-    <div class="agent-panel-card">
+
+
+  <!-- EXTRACTED LOGS & FILE VIEW MODAL -->
+  <div id="logModalOverlay" class="agent-panel-overlay" style="display: none;">
+    <div class="agent-panel-card" style="width: 1250px; max-width: 98vw; height: 90vh; max-height: 95vh;">
       <div class="agent-panel-header">
-        <h2>🤖 IBC Agentic Analysis</h2>
-        <button class="close-btn" id="closeAgentPanelBtn">✕</button>
-      </div>
-
-      <!-- SKILL SELECTOR -->
-      <div class="agent-field-group">
-        <label>Select Skill</label>
-        <div class="agent-skill-grid" id="agentSkillGrid">
-          <button class="skill-btn selected" data-skill="section_29a" id="skillBtn_section_29a">
-            <span class="skill-icon">⚖️</span>
-            <span class="skill-label">Section 29A Verification</span>
-            <span class="skill-desc">Eligibility check — all disqualification criteria (a)–(j)</span>
-          </button>
-          <button class="skill-btn" data-skill="statutory_plan_audit" id="skillBtn_statutory_plan_audit">
-            <span class="skill-icon">📋</span>
-            <span class="skill-label">Statutory Plan Audit</span>
-            <span class="skill-desc">IBC S.30(2) + CIRP Reg.38 compliance matrix</span>
-          </button>
-          <button class="skill-btn" data-skill="valuation_reconciliation" id="skillBtn_valuation_reconciliation">
-            <span class="skill-icon">📊</span>
-            <span class="skill-label">Valuation Reconciliation</span>
-            <span class="skill-desc">Cross-reference two valuer reports + haircut analysis</span>
-          </button>
-          <button class="skill-btn" data-skill="investor_fit" id="skillBtn_investor_fit">
-            <span class="skill-icon">🏢</span>
-            <span class="skill-label">Investor Fit Analysis</span>
-            <span class="skill-desc">6-dimension applicant capability assessment for CoC</span>
-          </button>
-          <button class="skill-btn" data-skill="plan_comparison" id="skillBtn_plan_comparison">
-            <span class="skill-icon">⚡</span>
-            <span class="skill-label">Plan Comparison (A vs B)</span>
-            <span class="skill-desc">Head-to-head comparison of two competing resolution plans</span>
-          </button>
-          <button class="skill-btn" data-skill="demo_kaiban" id="skillBtn_demo_kaiban">
-            <span class="skill-icon">🚀</span>
-            <span class="skill-label">KaibanJS Demo Team</span>
-            <span class="skill-desc">Collaborative Researcher + Writer demo team</span>
-          </button>
+        <h2 style="background: none; -webkit-text-fill-color: var(--text-color); color: var(--text-color);">Tiddler Extraction Logs & File Browser</h2>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button id="toggleLogPaneBtn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); font-size: 0.75rem; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; flex-shrink: 0;">Hide Logs</button>
+          <button class="close-btn" id="closeLogModalBtn">✕</button>
         </div>
       </div>
-
-      <!-- MULTI-FILE LIST (shown only when analysing basket/multiple files) -->
-      <div id="agentMultiFileContainer" style="display: none; flex-direction: column; gap: 0.5rem;">
-        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Selected Reports for Analysis</label>
-        <div id="agentSelectedFilesList" class="selected-files-list"></div>
-      </div>
-
-      <!-- DYNAMIC INPUTS (rendered by JS) -->
-      <div id="agentInputFields" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-
-      <!-- MODEL SELECTOR -->
-      <div class="agent-field-group">
-        <label>Local Model (Ollama)</label>
-        <input type="text" id="agentModelInput" value="hermes3" placeholder="e.g. hermes3, llama3, mistral" />
-      </div>
-
-      <!-- RUN BUTTON -->
-      <button class="agent-run-btn" id="agentRunBtn">▶ Run Analysis</button>
-
-      <!-- PROGRESS + LOG -->
-      <div class="agent-progress-area" id="agentProgressArea">
-        <div class="progress-bar-track">
-          <div class="progress-bar-fill" id="agentProgressFill"></div>
+      
+      <!-- Dual Pane Container -->
+      <div style="display: flex; gap: 1rem; flex-grow: 1; overflow: hidden; height: 100%;">
+        <!-- Left Pane: Log Terminal -->
+        <div id="modalLogPane" style="flex: 0.7; display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-width: 0;">
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Extraction Logs</label>
+          <div id="modalLogArea" class="agent-log" style="flex-grow: 1; min-height: 0; max-height: unset; height: 100%;"></div>
         </div>
-
-        <!-- Visual Agent Kanban Board -->
-        <div class="agent-kanban-container" id="agentKanbanContainer">
-          <div class="agent-kanban-column" id="ak-col-todo">
-            <h4>To Do</h4>
-            <div class="agent-kanban-cards" id="ak-list-todo"></div>
-          </div>
-          <div class="agent-kanban-column" id="ak-col-doing">
-            <h4>Doing</h4>
-            <div class="agent-kanban-cards" id="ak-list-doing"></div>
-          </div>
-          <div class="agent-kanban-column" id="ak-col-done">
-            <h4>Done</h4>
-            <div class="agent-kanban-cards" id="ak-list-done"></div>
+        
+        <!-- Right Pane: File Explorer & Preview -->
+        <div id="modalRightPane" style="flex: 2; display: flex; flex-direction: column; gap: 0.5rem; height: 100%; overflow: hidden; min-width: 0;">
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Extracted Tiddlers</label>
+          <div style="display: flex; gap: 0.75rem; flex-grow: 1; min-height: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.15); padding: 0.5rem;">
+            <!-- File List Panel -->
+            <div style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; border-right: 1px solid var(--border-color); padding-right: 0.5rem; overflow: hidden; height: 100%;">
+              <!-- Search box -->
+              <input type="text" id="modalFileSearch" placeholder="Filter tiddlers..." style="width: 100%; padding: 0.35rem 0.5rem; font-size: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-color); outline: none; flex-shrink: 0;" />
+              <!-- File List -->
+              <div id="modalFileList" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; min-height: 0;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); text-align: center;">No files loaded yet</span>
+              </div>
+            </div>
+            <!-- File Previewer -->
+            <pre id="modalCodePreview" style="flex-grow: 1; margin: 0; padding: 0.5rem; overflow: auto; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.75rem; color: #cbd5e1; background: #07090e; border-radius: 6px; white-space: pre-wrap; word-break: break-all;"></pre>
           </div>
         </div>
-
-        <div class="agent-log" id="agentLog"></div>
-        <div class="agent-result-banner" id="agentResultBanner"></div>
       </div>
     </div>
   </div>

@@ -60,6 +60,152 @@ function stripHtml(html) {
   return text;
 }
 
+function tiddlerToTidString(tiddler) {
+  let headers = "";
+  let text = "";
+  for (const [key, value] of Object.entries(tiddler)) {
+    if (key === "text") {
+      text = value;
+    } else {
+      const cleanValue = String(value).replace(/\r?\n/g, " ");
+      headers += `${key}: ${cleanValue}\n`;
+    }
+  }
+  return `${headers}\n${text}`;
+}
+
+function readSinglePageWikiAsFolder(filePath, rawHtml) {
+  const tempDir = path.join(path.dirname(filePath), ".kaiban-tmp-" + path.basename(filePath) + "-" + Date.now() + ".wiki");
+  try {
+    fs.mkdirSync(tempDir, { recursive: true });
+    fs.writeFileSync(path.join(tempDir, "tiddlywiki.info"), JSON.stringify({ description: "Temp Wiki" }, null, 2), "utf8");
+    const tiddlersDir = path.join(tempDir, "tiddlers");
+    fs.mkdirSync(tiddlersDir, { recursive: true });
+
+    let count = 0;
+    const matches = rawHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi);
+    for (const match of matches) {
+      const attrs = match[1];
+      const body = match[2];
+      if (attrs.includes("tiddlywiki-tiddler-store")) {
+        try {
+          const tiddlers = JSON.parse(body.trim());
+          for (const tiddler of tiddlers) {
+            if (tiddler.title) {
+              // Exclude system tiddlers to eliminate framework/plugin/theme bloat
+              if (tiddler.title.startsWith("$:/")) {
+                continue;
+              }
+              const safeTitle = tiddler.title.replace(/[^a-zA-Z0-9_\-]/g, "_");
+              const tidName = `${safeTitle}.tid`;
+              const tidContent = tiddlerToTidString(tiddler);
+              fs.writeFileSync(path.join(tiddlersDir, tidName), tidContent, "utf8");
+              count++;
+            }
+          }
+        } catch (e) {
+          dbgErr("Failed to parse store script JSON:", e.message);
+        }
+      }
+    }
+
+    dbg(`Extracted ${count} user tiddlers from single-page wiki into temp folder: ${tempDir}`);
+
+    // Read the temp directory using the directory logic in readReportContent
+    const resultText = readReportContent(tempDir);
+    return resultText;
+  } finally {
+    // Always clean up temp files
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        dbg("Cleaned up temp wiki folder:", tempDir);
+      }
+    } catch (e) {
+      dbgErr("Failed to clean up temp wiki folder:", e.message);
+    }
+  }
+}
+
+function extractWikiToFolder(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File or directory does not exist: ${filePath}`);
+  }
+  const stat = fs.statSync(filePath);
+  if (stat.isDirectory()) {
+    const tiddlersDir = path.join(filePath, "tiddlers");
+    if (!fs.existsSync(tiddlersDir)) {
+      throw new Error(`Directory is not a valid TiddlyWiki folder (no tiddlers/ subdirectory found).`);
+    }
+    let count = 0;
+    try {
+      const files = fs.readdirSync(tiddlersDir).filter(f => /\.(tid|txt|md)$/.test(f));
+      count = files.length;
+    } catch (e) {
+      throw new Error(`Failed to read directory: ${e.message}`);
+    }
+    return { count, targetDir: filePath, isAlreadyFolder: true };
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext !== ".html" && ext !== ".htm") {
+    throw new Error("Only .html or .htm TiddlyWiki files, or valid TiddlyWiki folders are supported.");
+  }
+  const rawHtml = fs.readFileSync(filePath, "utf8");
+  if (!rawHtml.includes("tiddlywiki-tiddler-store")) {
+    throw new Error("Not a valid TiddlyWiki 5 single-page file (no tiddler store found).");
+  }
+
+  const baseDir = path.dirname(filePath);
+  const baseName = path.basename(filePath, ext);
+  const targetDir = path.join(baseDir, baseName + ".wiki");
+
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(path.join(targetDir, "tiddlywiki.info"), JSON.stringify({
+    description: `Extracted from ${baseName}`,
+    plugins: [
+      "tiddlywiki/filesystem",
+      "tiddlywiki/tiddlyweb"
+    ],
+    themes: [
+      "tiddlywiki/snowwhite",
+      "tiddlywiki/vanilla"
+    ]
+  }, null, 2), "utf8");
+
+  const tiddlersDir = path.join(targetDir, "tiddlers");
+  fs.mkdirSync(tiddlersDir, { recursive: true });
+
+  let count = 0;
+  const matches = rawHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi);
+  for (const match of matches) {
+    const attrs = match[1];
+    const body = match[2];
+    if (attrs.includes("tiddlywiki-tiddler-store")) {
+      try {
+        const tiddlers = JSON.parse(body.trim());
+        for (const tiddler of tiddlers) {
+          if (tiddler.title) {
+            // Exclude system tiddlers to eliminate framework/plugin/theme bloat
+            if (tiddler.title.startsWith("$:/")) {
+              continue;
+            }
+            const safeTitle = tiddler.title.replace(/[^a-zA-Z0-9_\-]/g, "_");
+            const tidName = `${safeTitle}.tid`;
+            const tidContent = tiddlerToTidString(tiddler);
+            fs.writeFileSync(path.join(tiddlersDir, tidName), tidContent, "utf8");
+            count++;
+          }
+        }
+      } catch (e) {
+        throw new Error(`Failed to parse tiddlers store JSON: ${e.message}`);
+      }
+    }
+  }
+
+  return { count, targetDir };
+}
+
 function readReportContent(filePath) {
   dbg("readReportContent:", filePath);
   if (!fs.existsSync(filePath)) {
@@ -89,6 +235,15 @@ function readReportContent(filePath) {
     }
     const joined = result.join("\n\n") || "[Empty wiki folder]";
     return joined;
+  }
+
+  // Check if it is a single-page HTML TiddlyWiki
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === ".html" || ext === ".htm") {
+    const rawHtml = fs.readFileSync(filePath, "utf8");
+    if (rawHtml.includes("tiddlywiki-tiddler-store")) {
+      return readSinglePageWikiAsFolder(filePath, rawHtml);
+    }
   }
 
   const raw = fs.readFileSync(filePath, "utf8");
@@ -425,5 +580,7 @@ async function runSkill(skillKey, params, onLog, onProgress, onTeamInit, onTaskS
 
 module.exports = {
   runSkill,
-  checkOllamaHealth
+  checkOllamaHealth,
+  readReportContent,
+  extractWikiToFolder
 };

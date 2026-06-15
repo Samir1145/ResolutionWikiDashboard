@@ -429,19 +429,8 @@ function createKanbanCard(wiki) {
     }
   });
 
-  // AI Analyse Button
-  const analyseBtn = document.createElement("button");
-  analyseBtn.className = "btn analyse-btn";
-  analyseBtn.textContent = "\uD83E\uDD16 Analyse";
-  analyseBtn.title = "Run an IBC agentic analysis on this report";
-  analyseBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openAgentPanel(wiki.filePath, wiki.name);
-  });
-
   actions.appendChild(openBtn);
   actions.appendChild(revealBtn);
-  actions.appendChild(analyseBtn);
   card.appendChild(actions);
 
   // Drag listeners
@@ -528,143 +517,7 @@ function renderBasket() {
   }
 }
 
-function openAgentPanelMultiple(items) {
-  _selectedMultiFiles = items.map(x => x.filePath);
-  _contextFilePath = null;
-  const overlay = document.getElementById("agentPanelOverlay");
-  overlay.style.display = "flex";
-
-  // Reset state
-  _agentRunning = false;
-  document.getElementById("agentRunBtn").disabled = false;
-  document.getElementById("agentRunBtn").textContent = "▶ Run Analysis";
-  document.getElementById("agentProgressArea").classList.remove("visible");
-  document.getElementById("agentLog").innerHTML = "";
-  document.getElementById("agentProgressFill").style.width = "0%";
-  const banner = document.getElementById("agentResultBanner");
-  banner.className = "agent-result-banner";
-  banner.textContent = "";
-
-  // Show multi-file container, hide single input fields
-  document.getElementById("agentMultiFileContainer").style.display = "flex";
-  document.getElementById("agentInputFields").style.display = "none";
-
-  // Render selected files
-  const listEl = document.getElementById("agentSelectedFilesList");
-  while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
-
-  items.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "selected-file-item";
-    div.textContent = item.name;
-    div.title = item.filePath;
-    listEl.appendChild(div);
-  });
-}
-
-// Skill configurations: what input fields to show for each skill
-const SKILL_INPUTS = {
-  section_29a: [
-    { id: "ap_reportPath",  label: "Report Path (Resolution Plan / Applicant Profile)", placeholder: "e.g. /path/to/ResolutionPlan.html", key: "reportPath" },
-    { id: "ap_boardPath",   label: "Output Board Directory",                            placeholder: "e.g. /path/to/project/Verification",   key: "boardPath" },
-    { id: "ap_outputName", label: "Output Filename",                                   placeholder: "Section_29A_Report.html",               key: "outputName" }
-  ],
-  statutory_plan_audit: [
-    { id: "sp_reportPath",  label: "Resolution Plan Path",     placeholder: "e.g. /path/to/ResolutionPlan.html", key: "reportPath" },
-    { id: "sp_boardPath",   label: "Output Board Directory",   placeholder: "e.g. /path/to/project/Audit",      key: "boardPath" },
-    { id: "sp_outputName", label: "Output Filename",          placeholder: "Plan_Audit_Report.html",           key: "outputName" }
-  ],
-  valuation_reconciliation: [
-    { id: "vr_val1Path",    label: "Valuer 1 Report Path",  placeholder: "e.g. /path/to/Valuation_1.html",   key: "valuation1Path" },
-    { id: "vr_val2Path",    label: "Valuer 2 Report Path",  placeholder: "e.g. /path/to/Valuation_2.html",   key: "valuation2Path" },
-    { id: "vr_planPath",   label: "Resolution Plan Path (optional)", placeholder: "e.g. /path/to/Plan.html",key: "planPath" },
-    { id: "vr_boardPath",  label: "Output Board Directory",           placeholder: "e.g. /path/to/project",  key: "boardPath" },
-    { id: "vr_outputName", label: "Output Filename",                  placeholder: "Valuation_Recon.html",   key: "outputName" }
-  ],
-  investor_fit: [
-    { id: "if_reportPath",  label: "Investor Profile / Resolution Plan Path", placeholder: "e.g. /path/to/InvestorProfile.html", key: "reportPath" },
-    { id: "if_cdPath",      label: "Corporate Debtor Report (optional)",      placeholder: "e.g. /path/to/CD_Report.html",       key: "cdReportPath" },
-    { id: "if_boardPath",  label: "Output Board Directory",                   placeholder: "e.g. /path/to/project",              key: "boardPath" },
-    { id: "if_outputName", label: "Output Filename",                          placeholder: "Investor_Fit.html",                  key: "outputName" }
-  ],
-  plan_comparison: [
-    { id: "pc_planAPath",  label: "Resolution Plan A Path",  placeholder: "e.g. /path/to/Plan_A.html", key: "planAPath" },
-    { id: "pc_planBPath",  label: "Resolution Plan B Path",  placeholder: "e.g. /path/to/Plan_B.html", key: "planBPath" },
-    { id: "pc_boardPath",  label: "Output Board Directory",  placeholder: "e.g. /path/to/project",     key: "boardPath" },
-    { id: "pc_outputName", label: "Output Filename",         placeholder: "Plan_Comparison.html",      key: "outputName" }
-  ],
-  demo_kaiban: [
-    { id: "dk_boardPath",  label: "Output Board Directory",  placeholder: "e.g. /path/to/project",     key: "boardPath" },
-    { id: "dk_outputName", label: "Output Filename",         placeholder: "KaibanJS_Demo_Report.html",  key: "outputName" }
-  ]
-};
-
-function openAgentPanel(preFilledPath, reportName) {
-  _contextFilePath = preFilledPath || null;
-  _selectedMultiFiles = [];
-  const overlay = document.getElementById("agentPanelOverlay");
-  overlay.style.display = "flex";
-
-  // Reset state
-  _agentRunning = false;
-  document.getElementById("agentRunBtn").disabled = false;
-  document.getElementById("agentRunBtn").textContent = "\u25B6 Run Analysis";
-  document.getElementById("agentProgressArea").classList.remove("visible");
-  document.getElementById("agentLog").innerHTML = "";
-  document.getElementById("agentProgressFill").style.width = "0%";
-  const banner = document.getElementById("agentResultBanner");
-  banner.className = "agent-result-banner";
-  banner.textContent = "";
-
-  // Show single input fields, hide multi-file list
-  document.getElementById("agentMultiFileContainer").style.display = "none";
-  document.getElementById("agentInputFields").style.display = "flex";
-
-  // Pre-fill first reportPath field with the card's file path
-  const selectedSkill = document.querySelector(".skill-btn.selected")?.dataset?.skill || "section_29a";
-  renderSkillInputs(selectedSkill, preFilledPath);
-
-  // If no board path set yet, default to the card's directory
-  if (preFilledPath) {
-    const path = require("path");
-    const boardPathInputs = document.querySelectorAll("[id$='_boardPath']");
-    boardPathInputs.forEach(inp => {
-      if (!inp.value) inp.value = path.dirname(preFilledPath);
-    });
-  }
-}
-
-function renderSkillInputs(skillKey, preFilledPath) {
-  const container = document.getElementById("agentInputFields");
-  while (container.firstChild) container.removeChild(container.firstChild);
-
-  const fields = SKILL_INPUTS[skillKey] || [];
-  const path = require("path");
-
-  fields.forEach((field, idx) => {
-    const group = document.createElement("div");
-    group.className = "agent-field-group";
-
-    const label = document.createElement("label");
-    label.textContent = field.label;
-    label.setAttribute("for", field.id);
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.id   = field.id;
-    input.placeholder = field.placeholder;
-
-    // Pre-fill primary path and output dir
-    if (preFilledPath) {
-      if (idx === 0) input.value = preFilledPath;
-      if (field.key === "boardPath") input.value = path.dirname(preFilledPath);
-    }
-
-    group.appendChild(label);
-    group.appendChild(input);
-    container.appendChild(group);
-  });
-}
+// Removed openAgentPanelMultiple
 
 function getSkillParams(skillKey) {
   const params = {};
@@ -696,15 +549,6 @@ function getSkillParams(skillKey) {
     } else if (skillKey === "demo_kaiban") {
       params.outputName = "KaibanJS_Demo_Report.html";
     }
-  } else {
-    const fields = SKILL_INPUTS[skillKey] || [];
-    fields.forEach(field => {
-      const val = (document.getElementById(field.id)?.value || "").trim();
-      if (val) params[field.key] = val;
-    });
-    if (skillKey === "demo_kaiban" && !params.outputName) {
-      params.outputName = "KaibanJS_Demo_Report.html";
-    }
   }
 
   params.model = (document.getElementById("agentModelInput")?.value || "hermes3").trim();
@@ -730,211 +574,7 @@ function appendAgentLog(message) {
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-// Live Agent Task Kanban Board UI Helper Functions
-function initAgentKanbanBoard(tasksData) {
-  const todoList = document.getElementById("ak-list-todo");
-  const doingList = document.getElementById("ak-list-doing");
-  const doneList = document.getElementById("ak-list-done");
 
-  // Clear existing cards
-  [todoList, doingList, doneList].forEach(el => {
-    if (el) {
-      while (el.firstChild) el.removeChild(el.firstChild);
-    }
-  });
-
-  tasksData.forEach(task => {
-    const card = document.createElement("div");
-    card.className = "agent-task-card";
-    card.id = `ak-task-${task.id}`;
-
-    const title = document.createElement("div");
-    title.className = "agent-task-title";
-    title.textContent = task.title;
-
-    const assignee = document.createElement("div");
-    assignee.className = "agent-task-assignee";
-    assignee.textContent = `🤖 ${task.agentName}`;
-
-    card.appendChild(title);
-    card.appendChild(assignee);
-    if (todoList) {
-      todoList.appendChild(card);
-    }
-  });
-}
-
-function updateAgentTaskStatus(taskData) {
-  const card = document.getElementById(`ak-task-${taskData.id}`);
-  if (!card) return;
-
-  // Remove card from its current parent
-  if (card.parentNode) {
-    card.parentNode.removeChild(card);
-  }
-
-  // Reset classes
-  card.className = "agent-task-card";
-
-  let targetList;
-  if (taskData.status === "TODO") {
-    targetList = document.getElementById("ak-list-todo");
-  } else if (taskData.status === "DOING") {
-    targetList = document.getElementById("ak-list-doing");
-    card.classList.add("doing");
-  } else if (taskData.status === "DONE" || taskData.status === "COMPLETED") {
-    targetList = document.getElementById("ak-list-done");
-    card.classList.add("done");
-  }
-
-  if (targetList) {
-    targetList.appendChild(card);
-  }
-}
-
-function initAgentPanel() {
-  const overlay   = document.getElementById("agentPanelOverlay");
-  const closeBtn  = document.getElementById("closeAgentPanelBtn");
-  const runBtn    = document.getElementById("agentRunBtn");
-  const skillBtns = document.querySelectorAll(".skill-btn");
-
-  // Close panel
-  closeBtn.addEventListener("click", () => {
-    if (_agentRunning) {
-      if (!confirm("An analysis is running. Close anyway?")) return;
-    }
-    overlay.style.display = "none";
-  });
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeBtn.click();
-  });
-
-  // Skill selection
-  skillBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      skillBtns.forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-      const skill = btn.dataset.skill;
-      if (_selectedMultiFiles.length > 0) {
-        document.getElementById("agentMultiFileContainer").style.display = "flex";
-        document.getElementById("agentInputFields").style.display = "none";
-      } else {
-        renderSkillInputs(skill, _contextFilePath);
-        document.getElementById("agentMultiFileContainer").style.display = "none";
-        document.getElementById("agentInputFields").style.display = "flex";
-      }
-    });
-  });
-
-  // Run agent
-  runBtn.addEventListener("click", async () => {
-    if (_agentRunning) return;
-
-    const selectedBtn = document.querySelector(".skill-btn.selected");
-    const skillKey    = selectedBtn?.dataset?.skill;
-    if (!skillKey) { alert("Please select a skill."); return; }
-
-    const params = getSkillParams(skillKey);
-
-    // Validate required params
-    if (_selectedMultiFiles.length > 0) {
-      if (_selectedMultiFiles.length === 0) {
-        alert("Please select at least one file to analyse.");
-        return;
-      }
-    } else {
-      const fields  = SKILL_INPUTS[skillKey] || [];
-      const missing = fields.filter(f => !f.key.includes("optional") && !f.label.toLowerCase().includes("optional") && !params[f.key]);
-      if (skillKey === "demo_kaiban") {
-        if (!params.boardPath) {
-          alert("Please specify an Output Board Directory.");
-          return;
-        }
-      } else {
-        if (missing.length > 0 && (params.reportPath || params.planAPath || params.valuation1Path)) {
-          // OK – at least primary path is provided
-        } else if (!params.reportPath && !params.planAPath && !params.valuation1Path) {
-          alert("Please fill in at least the primary report path.");
-          return;
-        }
-      }
-    }
-    if (!params.boardPath) {
-      alert("Please specify an Output Board Directory.");
-      return;
-    }
-
-    // Check Ollama
-    const progressArea = document.getElementById("agentProgressArea");
-    const progressFill = document.getElementById("agentProgressFill");
-    const banner       = document.getElementById("agentResultBanner");
-    const logEl        = document.getElementById("agentLog");
-
-    progressArea.classList.add("visible");
-    banner.className = "agent-result-banner";
-    banner.textContent = "";
-    logEl.innerHTML = "";
-    progressFill.style.width = "5%";
-
-    appendAgentLog("\uD83D\uDD0D Checking Ollama connection...");
-
-    const health = await agentService.checkOllamaHealth();
-    if (!health.ok) {
-      appendAgentLog("\u26A0\uFE0F  Ollama not reachable: " + health.error);
-      appendAgentLog("  Tip: run \"ollama serve\" and \"ollama run " + params.model + "\" in Terminal first.");
-      banner.className = "agent-result-banner error";
-      banner.textContent = "\u274C Ollama not running — start Ollama first";
-      return;
-    }
-
-    appendAgentLog("\u2705 Ollama connected. Models: " + health.models.join(", "));
-
-    _agentRunning = true;
-    runBtn.disabled = true;
-    runBtn.textContent = "\u23F3 Running...";
-
-    try {
-      const result = await agentService.runSkill(
-        skillKey,
-        params,
-        (msg) => appendAgentLog(msg),
-        (pct) => { progressFill.style.width = Math.round(pct * 100) + "%"; },
-        (tasksData) => initAgentKanbanBoard(tasksData),
-        (taskData) => updateAgentTaskStatus(taskData)
-      );
-
-      if (result.success) {
-        appendAgentLog("\n\u2705 Analysis complete! (" + result.turns + " reasoning turns)");
-        if (result.outputFile) {
-          appendAgentLog("\uD83D\uDCC4 Output: " + result.outputFile);
-          banner.className = "agent-result-banner success";
-          banner.innerHTML = "\u2705 Report saved &mdash; <strong>" + require("path").basename(result.outputFile) + "</strong>";
-        } else if (result.textResponse) {
-          appendAgentLog("\uD83D\uDCAC " + result.textResponse.slice(0, 200));
-          banner.className = "agent-result-banner success";
-          banner.textContent = "\u2705 Analysis complete (no file written — check log)";
-        }
-        // Refresh board to show new card
-        if (currentProjectPath && activeBoardId) {
-          setTimeout(() => loadWikis(), 800);
-        }
-      } else {
-        appendAgentLog("\n\u274C Agent failed: " + (result.error || "Unknown error"));
-        banner.className = "agent-result-banner error";
-        banner.textContent = "\u274C " + (result.error || "Analysis failed");
-      }
-    } catch (err) {
-      appendAgentLog("\u274C Unexpected error: " + err.message);
-      banner.className = "agent-result-banner error";
-      banner.textContent = "\u274C Error: " + err.message;
-    } finally {
-      _agentRunning = false;
-      runBtn.disabled = false;
-      runBtn.textContent = "\u25B6 Run Analysis";
-      progressFill.style.width = "100%";
-    }
-  });
-}
 
 // ─── Drag and Drop ────────────────────────────────────────────────────────────
 function initDragAndDrop() {
@@ -1009,9 +649,267 @@ function initBasket() {
     renderBasket();
   });
 
-  runBtn.addEventListener("click", () => {
+  // Modal DOM elements
+  const logModal = document.getElementById("logModalOverlay");
+  const closeLogModalBtn = document.getElementById("closeLogModalBtn");
+  const toggleLogPaneBtn = document.getElementById("toggleLogPaneBtn");
+  const modalLogPane = document.getElementById("modalLogPane");
+  const modalLogArea = document.getElementById("modalLogArea");
+  const modalFileList = document.getElementById("modalFileList");
+  const modalCodePreview = document.getElementById("modalCodePreview");
+  const searchInput = document.getElementById("modalFileSearch");
+
+  // Close log modal
+  if (closeLogModalBtn && logModal) {
+    closeLogModalBtn.addEventListener("click", () => {
+      logModal.style.display = "none";
+    });
+    logModal.addEventListener("click", (e) => {
+      if (e.target === logModal) {
+        logModal.style.display = "none";
+      }
+    });
+  }
+
+  // Toggle log pane visibility
+  if (toggleLogPaneBtn && modalLogPane) {
+    toggleLogPaneBtn.addEventListener("click", () => {
+      if (modalLogPane.style.display === "none") {
+        modalLogPane.style.display = "flex";
+        toggleLogPaneBtn.textContent = "Hide Logs";
+      } else {
+        modalLogPane.style.display = "none";
+        toggleLogPaneBtn.textContent = "Show Logs";
+      }
+    });
+  }
+
+  // Shared Closure States for Explorer Pagination & Filtering
+  let allFiles = [];
+  let filteredFiles = [];
+  let loadedCount = 0;
+  let lastHeaderRendered = null;
+  const PAGE_SIZE = 50;
+
+  const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+  function renderNextChunk() {
+    if (!modalFileList) return;
+    const chunk = filteredFiles.slice(loadedCount, loadedCount + PAGE_SIZE);
+    
+    if (chunk.length === 0 && loadedCount === 0) {
+      modalFileList.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">No tiddlers match filter</span>';
+      return;
+    }
+
+    const path = require("path");
+    const fs = require("fs");
+
+    chunk.forEach(item => {
+      if (item.folderName !== lastHeaderRendered) {
+        lastHeaderRendered = item.folderName;
+        const folderLabel = document.createElement("div");
+        folderLabel.style.fontSize = "0.72rem";
+        folderLabel.style.fontWeight = "normal";
+        folderLabel.style.color = "var(--text-muted)";
+        folderLabel.style.marginTop = "0.4rem";
+        folderLabel.style.marginBottom = "0.2rem";
+        folderLabel.style.flexShrink = "0";
+        folderLabel.textContent = item.folderName;
+        modalFileList.appendChild(folderLabel);
+      }
+
+      const fileBtn = document.createElement("button");
+      fileBtn.style.background = "rgba(255,255,255,0.03)";
+      fileBtn.style.border = "1px solid var(--border-color)";
+      fileBtn.style.borderRadius = "4px";
+      fileBtn.style.padding = "0.25rem 0.4rem";
+      fileBtn.style.textAlign = "left";
+      fileBtn.style.color = "var(--text-color)";
+      fileBtn.style.fontSize = "0.7rem";
+      fileBtn.style.cursor = "pointer";
+      fileBtn.style.overflow = "hidden";
+      fileBtn.style.textOverflow = "ellipsis";
+      fileBtn.style.whiteSpace = "nowrap";
+      fileBtn.style.width = "100%";
+      fileBtn.style.flexShrink = "0";
+      fileBtn.textContent = item.name;
+      fileBtn.title = item.name;
+
+      fileBtn.addEventListener("click", () => {
+        // Remove active styling from other buttons
+        modalFileList.querySelectorAll("button").forEach(btn => {
+          btn.style.borderColor = "var(--border-color)";
+          btn.style.background = "rgba(255,255,255,0.03)";
+        });
+        // Highlight this button
+        fileBtn.style.borderColor = "var(--text-muted)";
+        fileBtn.style.background = "rgba(255, 255, 255, 0.1)";
+
+        // Read and preview the tiddler content!
+        try {
+          const content = fs.readFileSync(item.filePath, "utf8");
+          if (modalCodePreview) {
+            modalCodePreview.textContent = content;
+          }
+        } catch (readErr) {
+          if (modalCodePreview) {
+            modalCodePreview.textContent = `Error reading file:\n${readErr.message}`;
+          }
+        }
+      });
+
+      modalFileList.appendChild(fileBtn);
+    });
+
+    loadedCount += chunk.length;
+  }
+
+  // Setup infinite scroll listener
+  if (modalFileList) {
+    modalFileList.addEventListener("scroll", () => {
+      if (modalFileList.scrollTop + modalFileList.clientHeight >= modalFileList.scrollHeight - 30) {
+        if (loadedCount < filteredFiles.length) {
+          renderNextChunk();
+        }
+      }
+    });
+  }
+
+  // Setup live search query filtering
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.toLowerCase().trim();
+      if (query === "") {
+        filteredFiles = allFiles;
+      } else {
+        filteredFiles = allFiles.filter(f => f.name.toLowerCase().includes(query));
+      }
+      modalFileList.innerHTML = "";
+      loadedCount = 0;
+      lastHeaderRendered = null;
+      renderNextChunk();
+    });
+  }
+
+  runBtn.addEventListener("click", async () => {
     if (basketItems.length === 0) return;
-    openAgentPanelMultiple(basketItems);
+
+    // Open modal
+    if (logModal) {
+      logModal.style.display = "flex";
+    }
+
+    // Reset fields
+    if (modalLogArea) {
+      modalLogArea.innerHTML = "";
+    }
+    if (modalFileList) {
+      modalFileList.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted); text-align: center;">Extracting files...</span>';
+    }
+    if (modalCodePreview) {
+      modalCodePreview.textContent = "";
+    }
+
+    async function addLogLine(text) {
+      if (!modalLogArea) return;
+      const line = document.createElement("div");
+      line.className = "basket-log-line";
+      line.style.color = "var(--text-color)";
+      line.textContent = text;
+      modalLogArea.appendChild(line);
+      modalLogArea.scrollTop = modalLogArea.scrollHeight;
+      await yieldToMain();
+    }
+
+    await addLogLine("Starting .tid extraction from basket...");
+    await addLogLine(`Found ${basketItems.length} items in the analysis basket.`);
+
+    const path = require("path");
+    const fs = require("fs");
+    let allExtractedFolders = [];
+
+    for (const item of basketItems) {
+      const fileName = path.basename(item.filePath);
+      const filePath = item.filePath;
+      await addLogLine(`----------------------------------------`);
+      await addLogLine(`Processing item: "${fileName}"`);
+      await addLogLine(`Full path: "${filePath}"`);
+      
+      try {
+        if (!fs.existsSync(filePath)) {
+          throw new Error("File or directory path does not exist on disk.");
+        }
+        
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory()) {
+          await addLogLine(`[Inspector] Path type: Directory`);
+          const tiddlersDir = path.join(filePath, "tiddlers");
+          await addLogLine(`[Inspector] Target tiddlers directory path: "${tiddlersDir}"`);
+          if (fs.existsSync(tiddlersDir)) {
+            await addLogLine(`[Inspector] Tiddlers directory exists. Scanning directory contents...`);
+            const files = fs.readdirSync(tiddlersDir).filter(f => /\.(tid|txt|md)$/.test(f));
+            await addLogLine(`[Inspector] Detected ${files.length} .tid/.txt/.md files inside.`);
+          } else {
+            await addLogLine(`[Inspector] Warning: "tiddlers" subdirectory was not found under this directory.`);
+          }
+        } else {
+          await addLogLine(`[Inspector] Path type: File`);
+          await addLogLine(`[Inspector] File size: ${stat.size} bytes`);
+          const ext = path.extname(filePath).toLowerCase();
+          await addLogLine(`[Inspector] File extension: "${ext}"`);
+        }
+
+        await yieldToMain();
+        const res = agentService.extractWikiToFolder(filePath);
+        await addLogLine(`[Success] Processed ${res.count} tiddlers.`);
+        await addLogLine(`[Success] Tiddlers source directory: "${res.targetDir}"`);
+        allExtractedFolders.push(res.targetDir);
+      } catch (err) {
+        await addLogLine(`[Error] Failed to process ${fileName}: ${err.message}`);
+        console.error("Extraction error:", err);
+      }
+      await yieldToMain();
+    }
+
+    await addLogLine(`----------------------------------------`);
+    await addLogLine("Extraction finished!");
+
+    // Build the allFiles list in memory
+    allFiles = [];
+    for (const folderPath of allExtractedFolders) {
+      const tiddlersDir = path.join(folderPath, "tiddlers");
+      if (fs.existsSync(tiddlersDir)) {
+        try {
+          const files = fs.readdirSync(tiddlersDir).filter(f => /\.(tid|txt|md)$/.test(f));
+          const folderName = path.basename(folderPath).replace(/\.wiki$/i, "");
+          files.forEach(file => {
+            allFiles.push({
+              name: file,
+              folderName: folderName,
+              filePath: path.join(tiddlersDir, file)
+            });
+          });
+        } catch (e) {
+          await addLogLine(`[Error] Failed to read tiddlers: ${e.message}`);
+        }
+      }
+      await yieldToMain();
+    }
+
+    // Reset list state and search input values
+    if (searchInput) {
+      searchInput.value = "";
+    }
+    if (modalFileList) {
+      modalFileList.innerHTML = "";
+    }
+    filteredFiles = allFiles;
+    loadedCount = 0;
+    lastHeaderRendered = null;
+
+    // Load initial chunk
+    renderNextChunk();
   });
 }
 
@@ -1027,7 +925,7 @@ function boot() {
   initWorkspaces();
   initDashboard();
   initDragAndDrop();
-  initAgentPanel();
+
   initBasket();
 
   const searchWikis = document.getElementById("searchWikis");
