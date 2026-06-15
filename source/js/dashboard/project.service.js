@@ -1,5 +1,6 @@
 // project.service.js – handles reference-based Project and Report management scoped by Workspace
 "use strict";
+const fs = require("fs");
 const path = require("path");
 const config = require("./config.service");
 
@@ -85,12 +86,7 @@ function addProject(projectPath) {
   const name = path.basename(projectPath);
   ws.projects.push({
     id: projectPath,
-    name: name,
-    boards: [{
-      id: "board_default",
-      name: "Main Board",
-      reports: []
-    }]
+    name: name
   });
   config.setConfig(cfg);
 }
@@ -120,10 +116,13 @@ function listProjects() {
   const ws = getActiveWorkspace();
   return ws.projects.map(p => {
     let wikiCount = 0;
-    if (p.boards) {
-      p.boards.forEach(b => {
-        if (b.reports) wikiCount += b.reports.length;
+    try {
+      const boards = listBoards(p.id);
+      boards.forEach(b => {
+        wikiCount += b.reportCount;
       });
+    } catch (e) {
+      console.error(`Failed to list boards for project ${p.id}:`, e);
     }
     return {
       id: p.id,
@@ -138,135 +137,226 @@ function getProject(projectPath) {
   return ws.projects.find(p => p.id === projectPath);
 }
 
-// ─── Board/Swimlane Management (Scoped) ──────────────────────────────────────
+// ─── Local Metadata Management Helpers ───────────────────────────────────────
 
-function addBoard(projectPath, name) {
-  const cfg = config.getConfig();
-  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
-  if (!ws) throw new Error("Active workspace not found.");
-  const proj = ws.projects.find(p => p.id === projectPath);
-  if (!proj) throw new Error("Project not found.");
-  
-  if (!proj.boards) proj.boards = [];
-  const boardId = "board_" + Date.now();
-  proj.boards.push({
-    id: boardId,
-    name: name,
-    reports: []
-  });
-  config.setConfig(cfg);
-  return boardId;
-}
-
-function removeBoard(projectPath, boardId) {
-  const cfg = config.getConfig();
-  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
-  if (ws) {
-    const proj = ws.projects.find(p => p.id === projectPath);
-    if (proj && proj.boards) {
-      proj.boards = proj.boards.filter(b => b.id !== boardId);
-      config.setConfig(cfg);
-    }
+function readProjectMetadata(projectPath) {
+  const metaPath = path.join(projectPath, ".tiddlydesk-meta.json");
+  if (!fs.existsSync(metaPath)) {
+    return { reports: {} };
+  }
+  try {
+    const raw = fs.readFileSync(metaPath, "utf8");
+    return JSON.parse(raw) || { reports: {} };
+  } catch (e) {
+    console.error("Failed to read project metadata:", e);
+    return { reports: {} };
   }
 }
 
-function renameBoard(projectPath, boardId, newName) {
-  const cfg = config.getConfig();
-  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
-  if (ws) {
-    const proj = ws.projects.find(p => p.id === projectPath);
-    if (proj && proj.boards) {
-      const board = proj.boards.find(b => b.id === boardId);
-      if (board) {
-        board.name = newName;
-        config.setConfig(cfg);
+function writeProjectMetadata(projectPath, data) {
+  const metaPath = path.join(projectPath, ".tiddlydesk-meta.json");
+  try {
+    fs.writeFileSync(metaPath, JSON.stringify(data, null, 2), "utf8");
+  } catch (e) {
+    console.error("Failed to write project metadata:", e);
+  }
+}
+
+// ─── Project Structure Scanning ─────────────────────────────────────────────
+
+function scanProject(projectPath) {
+  const boards = [];
+  const rootReports = [];
+  
+  if (!fs.existsSync(projectPath)) {
+    return { boards, rootReports };
+  }
+  
+  let items;
+  try {
+    items = fs.readdirSync(projectPath);
+  } catch (e) {
+    console.error("Failed to readdir projectPath:", e);
+    return { boards, rootReports };
+  }
+  
+  for (const item of items) {
+    if (item === ".tiddlydesk-meta.json" || item.startsWith(".")) {
+      continue;
+    }
+    const itemPath = path.join(projectPath, item);
+    let stat;
+    try {
+      stat = fs.statSync(itemPath);
+    } catch (e) {
+      continue;
+    }
+    
+    if (stat.isDirectory()) {
+      const isWikiFolder = fs.existsSync(path.join(itemPath, "tiddlywiki.info"));
+      if (isWikiFolder) {
+        rootReports.push({
+          name: item,
+          filePath: itemPath,
+          isFolderWiki: true
+        });
+      } else {
+        // It's a board!
+        boards.push({
+          id: item,
+          name: item,
+          filePath: itemPath
+        });
+      }
+    } else if (stat.isFile()) {
+      const ext = path.extname(item).toLowerCase();
+      if (ext === ".html" || ext === ".htm") {
+        rootReports.push({
+          name: item,
+          filePath: itemPath,
+          isFolderWiki: false
+        });
       }
     }
   }
+  
+  return { boards, rootReports };
+}
+
+function listReportsInBoardDir(projectPath, boardId) {
+  const reports = [];
+  if (boardId === "board_root") {
+    const { rootReports } = scanProject(projectPath);
+    return rootReports;
+  }
+  
+  const boardPath = path.join(projectPath, boardId);
+  if (!fs.existsSync(boardPath)) {
+    return reports;
+  }
+  
+  let items;
+  try {
+    items = fs.readdirSync(boardPath);
+  } catch (e) {
+    return reports;
+  }
+  
+  for (const item of items) {
+    if (item.startsWith(".")) continue;
+    const itemPath = path.join(boardPath, item);
+    let stat;
+    try {
+      stat = fs.statSync(itemPath);
+    } catch (e) {
+      continue;
+    }
+    
+    if (stat.isDirectory()) {
+      const isWikiFolder = fs.existsSync(path.join(itemPath, "tiddlywiki.info"));
+      if (isWikiFolder) {
+        reports.push({
+          name: item,
+          filePath: itemPath,
+          isFolderWiki: true
+        });
+      }
+    } else if (stat.isFile()) {
+      const ext = path.extname(item).toLowerCase();
+      if (ext === ".html" || ext === ".htm") {
+        reports.push({
+          name: item,
+          filePath: itemPath,
+          isFolderWiki: false
+        });
+      }
+    }
+  }
+  return reports;
+}
+
+// ─── Board/Swimlane Management (Scoped) ──────────────────────────────────────
+
+function addBoard(projectPath, name) {
+  throw new Error("Adding boards via UI is disabled. Please create a folder on your filesystem.");
+}
+
+function removeBoard(projectPath, boardId) {
+  throw new Error("Removing boards via UI is disabled. Please delete the folder on your filesystem.");
+}
+
+function renameBoard(projectPath, boardId, newName) {
+  throw new Error("Renaming boards via UI is disabled. Please rename the folder on your filesystem.");
 }
 
 function listBoards(projectPath) {
-  const proj = getProject(projectPath);
-  if (proj && proj.boards) {
-    return proj.boards.map(b => ({
-      id: b.id,
-      name: b.name,
-      reportCount: b.reports ? b.reports.length : 0
-    }));
+  const { boards, rootReports } = scanProject(projectPath);
+  
+  const result = [];
+  if (rootReports.length > 0) {
+    result.push({
+      id: "board_root",
+      name: "Main Board",
+      reportCount: rootReports.length
+    });
   }
-  return [];
+  
+  for (const board of boards) {
+    const reports = listReportsInBoardDir(projectPath, board.id);
+    result.push({
+      id: board.id,
+      name: board.name,
+      reportCount: reports.length
+    });
+  }
+  
+  if (result.length === 0) {
+    result.push({
+      id: "board_root",
+      name: "Main Board",
+      reportCount: 0
+    });
+  }
+  
+  return result;
 }
 
 // ─── Report/Wiki Management (Scoped) ────────────────────────────────────────
 
 function addReportToBoard(projectPath, boardId, filePath) {
-  const cfg = config.getConfig();
-  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
-  if (!ws) throw new Error("Active workspace not found.");
-  const proj = ws.projects.find(p => p.id === projectPath);
-  if (!proj) throw new Error("Project not found.");
-  if (!proj.boards) proj.boards = [];
-  const board = proj.boards.find(b => b.id === boardId);
-  if (!board) throw new Error("Board not found.");
-  
-  if (!board.reports) board.reports = [];
-  const exists = board.reports.find(r => r.filePath === filePath);
-  if (exists) throw new Error("Report is already added to this board.");
-  
-  const name = path.basename(filePath);
-  board.reports.push({
-    name: name,
-    filePath: filePath,
-    status: "todo"
-  });
-  config.setConfig(cfg);
+  throw new Error("Adding reports via UI is disabled. Please place the file or folder on your filesystem.");
 }
 
 function removeReportFromBoard(projectPath, boardId, filePath) {
-  const cfg = config.getConfig();
-  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
-  if (ws) {
-    const proj = ws.projects.find(p => p.id === projectPath);
-    if (proj && proj.boards) {
-      const board = proj.boards.find(b => b.id === boardId);
-      if (board && board.reports) {
-        board.reports = board.reports.filter(r => r.filePath !== filePath);
-        config.setConfig(cfg);
-      }
-    }
-  }
+  throw new Error("Removing reports via UI is disabled. Please delete the file or folder on your filesystem.");
 }
 
 function updateReportStatusInBoard(projectPath, boardId, filePath, status) {
-  const cfg = config.getConfig();
-  const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
-  if (ws) {
-    const proj = ws.projects.find(p => p.id === projectPath);
-    if (proj && proj.boards) {
-      const board = proj.boards.find(b => b.id === boardId);
-      if (board && board.reports) {
-        const rep = board.reports.find(r => r.filePath === filePath);
-        if (rep) {
-          rep.status = status;
-          config.setConfig(cfg);
-        }
-      }
-    }
+  const metadata = readProjectMetadata(projectPath);
+  const relPath = path.relative(projectPath, filePath);
+  
+  if (!metadata.reports) {
+    metadata.reports = {};
   }
+  if (!metadata.reports[relPath]) {
+    metadata.reports[relPath] = {};
+  }
+  metadata.reports[relPath].status = status;
+  
+  writeProjectMetadata(projectPath, metadata);
 }
 
 function listReportsByBoard(projectPath, boardId) {
-  const proj = getProject(projectPath);
-  if (proj && proj.boards) {
-    const board = proj.boards.find(b => b.id === boardId);
-    if (board && board.reports) {
-      board.reports.forEach(r => {
-        if (!r.status) r.status = "todo";
-      });
-      return board.reports;
-    }
-  }
-  return [];
+  const reports = listReportsInBoardDir(projectPath, boardId);
+  const metadata = readProjectMetadata(projectPath);
+  
+  reports.forEach(r => {
+    const relPath = path.relative(projectPath, r.filePath);
+    const meta = metadata.reports[relPath] || {};
+    r.status = meta.status || "todo";
+  });
+  
+  return reports;
 }
 
 module.exports = {

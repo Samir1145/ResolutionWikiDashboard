@@ -546,33 +546,65 @@
 
     /* SETTINGS CONTAINER & DROPDOWN */
     .settings-container {
-      position: absolute;
-      top: 2rem;
-      right: 2rem;
+      position: relative;
       z-index: 1000;
     }
 
-    .settings-toggle-btn {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1.25rem;
-      width: 42px;
-      height: 42px;
+    /* SQUARE BUTTONS */
+    .square-btn {
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.25s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 0;
+      margin: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--tertiary-accent);
+      color: var(--btn-text);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+    .square-btn:hover {
+      background: var(--tertiary-hover);
+      border-color: var(--primary-accent);
+      transform: translateY(-1px);
+    }
+    .square-btn.danger-btn:hover {
+      background: var(--danger-accent);
+      color: #ffffff;
+      border-color: var(--danger-accent);
+      box-shadow: 0 4px 10px rgba(244, 63, 94, 0.25);
+    }
+    #settingsBtn:hover {
+      transform: scale(1.05) rotate(30deg);
     }
 
-    .settings-toggle-btn:hover {
-      transform: scale(1.05) rotate(30deg);
-      border-color: var(--primary-accent);
+    /* PROJECT ACTION BAR */
+    .project-action-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .project-action-bar #addFolderBtn {
+      margin: 0;
+      height: 42px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .project-action-bar #searchInput {
+      margin: 0;
+      height: 42px;
+      box-sizing: border-box;
+      flex-grow: 1;
     }
 
     .settings-dropdown {
@@ -683,35 +715,32 @@
 <body>
   <!-- MAIN DASHBOARD VIEW -->
   <div id="dashboardView">
-    <!-- SETTINGS DROPDOWN MENU -->
-    <div class="settings-container">
-      <button id="settingsBtn" class="settings-toggle-btn" aria-label="Open Settings">⚙️</button>
-      <div id="settingsDropdown" class="settings-dropdown">
-        <div class="settings-header">Settings</div>
-        <div class="settings-item">
-          <span>Appearance</span>
-          <button id="themeToggle" class="settings-btn" aria-label="Toggle Theme">🌙 Dark Mode</button>
-        </div>
-        <div class="settings-item" style="margin-top: 0.25rem;">
-          <span>Application</span>
-          <button id="aboutBtn" class="settings-btn">About App</button>
-        </div>
-      </div>
-    </div>
-    
     <!-- WORKSPACE TAB BAR -->
     <div id="workspaceBar" class="workspace-bar" style="display:none;">
       <div id="workspaceTabs" style="display:flex; gap:0.5rem; flex-wrap:wrap;"></div>
       <div class="workspace-actions">
-        <button id="addWorkspaceBtn" class="btn open-btn">Add Workspace</button>
-        <button id="renameWorkspaceBtn" class="btn rename-btn">Rename</button>
-        <button id="deleteWorkspaceBtn" class="btn delete-btn">Delete</button>
+        <button id="addWorkspaceBtn" class="square-btn" title="Add Workspace">+</button>
+        <button id="renameWorkspaceBtn" class="square-btn" title="Rename Workspace">#</button>
+        <button id="deleteWorkspaceBtn" class="square-btn danger-btn" title="Delete Workspace">x</button>
+        <!-- SETTINGS DROPDOWN MENU -->
+        <div class="settings-container">
+          <button id="settingsBtn" class="square-btn" title="Settings" aria-label="Open Settings">⚙️</button>
+          <div id="settingsDropdown" class="settings-dropdown">
+            <div class="settings-header">Settings</div>
+            <button id="themeToggle" class="settings-btn" aria-label="Toggle Theme">🌙 Dark Mode</button>
+            <button id="aboutBtn" class="settings-btn">About App</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="loader" style="font-size:1.5rem; text-align:center; margin-top:2rem; color:var(--text-muted);">Loading Dashboard...</div>
-    <button id="addFolderBtn" style="display:none;">Add Project</button>
-    <input type="text" id="searchInput" placeholder="Search projects..." style="display:none;" />
+    
+    <!-- PROJECT ACTION BAR -->
+    <div id="projectActionBar" class="project-action-bar" style="display:none;">
+      <button id="addFolderBtn" class="btn open-btn">+ Add Project</button>
+      <input type="text" id="searchInput" placeholder="Search projects..." />
+    </div>
     <div id="folderList" style="display:none;"></div>
   </div>
 
@@ -720,15 +749,13 @@
     <div class="wiki-list-header">
       <button id="backBtn" class="btn back-btn">← Back to Projects</button>
       <h1 id="projectTitle" class="project-title">Project: </h1>
+      <button id="refreshBtn" class="btn open-btn" style="margin-left: 10px;" title="Refresh from Disk">🔄 Refresh</button>
     </div>
     
     <div class="project-layout">
       <!-- SIDEBAR FOR SWIMLANES / BOARDS -->
       <aside class="project-sidebar">
-        <div class="sidebar-section-title">
-          <span>Boards (Swimlanes)</span>
-          <button id="addBoardBtn" class="btn open-btn" style="padding: 0.15rem 0.5rem; font-size: 0.9rem; font-weight: bold; margin: 0;" title="Add Board">+</button>
-        </div>
+        <input type="text" id="searchWikis" placeholder="Search reports..." style="margin-bottom: 1.5rem; width: 100%; box-sizing: border-box;" />
         <ul id="boardList" class="board-nav-list">
           <!-- Dynamic board items -->
         </ul>
@@ -736,11 +763,10 @@
 
       <!-- KANBAN BOARD CONTENT -->
       <main class="board-content">
-        <div class="board-header-row">
+        <div class="board-header-row" style="display: none;">
           <h2 id="activeBoardTitle" class="board-title">Main Board</h2>
-          <button id="addWikiBtn" class="btn add-btn">+ Add Report</button>
+          <button id="addWikiBtn" class="btn add-btn" style="display: none;">+ Add Report</button>
         </div>
-        <input type="text" id="searchWikis" placeholder="Search reports..." />
         
         <!-- KANBAN BOARD -->
         <div class="kanban-board">

@@ -18,7 +18,7 @@ function showBackstageWindow() {
 	$tw.desktop.utils.menu.createMenuBar(backstageWindow);
 }
 
-backstageWindow.on("close",function(event) {
+backstageWindow.on("close", function (event) {
 	backstageWindow.hide();
 });
 
@@ -39,13 +39,13 @@ trayMenu.append(new gui.MenuItem({
 }));
 trayMenu.append(new gui.MenuItem({
 	label: "Wiki List",
-	click: function() {
+	click: function () {
 		$tw.desktop.windowList.openByUrl("backstage://WikiListWindow");
 	}
 }));
 trayMenu.append(new gui.MenuItem({
 	label: "Settings",
-	click: function() {
+	click: function () {
 		$tw.desktop.windowList.openByUrl("backstage://$:/TiddlyDesktop/Settings");
 	}
 }));
@@ -55,7 +55,7 @@ trayMenu.append(new gui.MenuItem({
 }));
 trayMenu.append(new gui.MenuItem({
 	label: "Help",
-	click: function() {
+	click: function () {
 		$tw.desktop.windowList.openByUrl("backstage://$:/TiddlyDesktop/Help");
 	}
 }));
@@ -63,9 +63,9 @@ trayMenu.append(new gui.MenuItem({
 	label: "",
 	type: "separator"
 }));
-	trayMenu.append(new gui.MenuItem({
+trayMenu.append(new gui.MenuItem({
 	label: "Quit",
-	click: function() {
+	click: function () {
 		gui.App.quit();
 		// gui.App.closeAllWindows();
 	}
@@ -73,25 +73,29 @@ trayMenu.append(new gui.MenuItem({
 tray.menu = trayMenu;
 
 // Set up the $tw global
-var $tw = {desktop: {
-	windowList: new WindowList({
-		backstageWindow_nwjs: gui.Window.get()
-	}),
-	backstageWindow: {
-		show: showBackstageWindow
-	},
-	gui: gui,
-	utils: {
-		devtools: require("../js/utils/devtools.js"),
-		dom: require("../js/utils/dom.js"),
-		file: require("../js/utils/file.js"),
-		links: require("../js/utils/links.js"),
-		menu: require("../js/utils/menu.js"),
-		nwjs: require("../js/utils/nwjs.js"),
-		saving: require("../js/utils/saving.js"),
-		wiki: require("../js/utils/wiki.js")
+var $tw = {
+	desktop: {
+		windowList: new WindowList({
+			backstageWindow_nwjs: gui.Window.get()
+		}),
+		backstageWindow: {
+			show: showBackstageWindow
+		},
+		gui: gui,
+		utils: {
+			devtools: require("../js/utils/devtools.js"),
+			dom: require("../js/utils/dom.js"),
+			dragdrop: require("../js/utils/dragdrop.js"),
+			file: require("../js/utils/file.js"),
+			findbar: require("../js/utils/findbar.js"),
+			links: require("../js/utils/links.js"),
+			menu: require("../js/utils/menu.js"),
+			nwjs: require("../js/utils/nwjs.js"),
+			saving: require("../js/utils/saving.js"),
+			wiki: require("../js/utils/wiki.js")
+		}
 	}
-}};
+};
 
 global.$tw = $tw;
 window.$tw = $tw;
@@ -99,7 +103,14 @@ window.$tw = $tw;
 var backstageWikiFolder = $tw.desktop.utils.wiki.getBackstageWikiFolder(gui.App.dataPath);
 
 // Show dev tools on F12
-$tw.desktop.utils.devtools.trapDevTools(backstageWindow,document);
+$tw.desktop.utils.devtools.trapDevTools(backstageWindow, document);
+
+// Fullscreen on F11 for this window
+try {
+	require("../js/utils/fullscreen.js").install(backstageWindow, document, function () { return $tw.rootWidget; });
+} catch (e) {
+	console.error("[TiddlyDesktop] fullscreen install failed:", e);
+}
 
 
 // First part of boot process
@@ -116,12 +127,12 @@ $tw.boot.argv = [backstageWikiFolder];
 
 // Override process.nextTick() because it is broken under nw.js in mixed mode
 var old_process_nextTick = process.nextTick;
-process.nextTick = function() {
+process.nextTick = function () {
 	var fn = arguments[0],
-		args = Array.prototype.slice.call(arguments,1);
-	window.setTimeout(function() {
-		fn.apply(null,args);
-	},4);
+		args = Array.prototype.slice.call(arguments, 1);
+	window.setTimeout(function () {
+		fn.apply(null, args);
+	}, 4);
 };
 
 // Command handlers
@@ -129,13 +140,13 @@ process.nextTick = function() {
 var defaultCommand = "open",
 	commandFlags = {},
 	commands = {
-		"open": function(args) {
-			args.forEach(function(p) {
+		"open": function (args) {
+			args.forEach(function (p) {
 				$tw.desktop.windowList.openByPathname(p);
 				commandFlags.haveOpenedWindow = true;
 			});
 		},
-		"debug": function(args) {
+		"debug": function (args) {
 			backstageWindow.showDevTools();
 		}
 	};
@@ -144,23 +155,23 @@ var defaultCommand = "open",
 
 $tw.boot.suppressBoot = true;
 require("../tiddlywiki/boot/boot.js").TiddlyWiki($tw);
-$tw.boot.boot(function() {
+$tw.boot.boot(function () {
 	// Process command line
 	var tokens = gui.App.argv.slice(0),
 		command, commandFn,
 		args;
-	while(tokens.length > 0) {
-		if(tokens[0].startsWith("--")) {
+	while (tokens.length > 0) {
+		if (tokens[0].startsWith("--")) {
 			command = tokens.shift().slice(2);
 		} else {
 			command = defaultCommand;
 		}
 		args = [];
-		while(tokens.length > 0 && !tokens[0].startsWith("--")) {
+		while (tokens.length > 0 && !tokens[0].startsWith("--")) {
 			args.push(tokens.shift());
 		}
 		commandFn = commands[command];
-		if(!commandFn) {
+		if (!commandFn) {
 			console.error("Unknown command: --" + command);
 		} else {
 			commandFn(args);
@@ -172,7 +183,7 @@ $tw.boot.boot(function() {
 	// 	$tw.desktop.windowList.openByPathname(p);
 	// });
 	// Open dashboard window if we haven't opened any other windows
-	if(!commandFlags.haveOpenedWindow) {
+	if (!commandFlags.haveOpenedWindow) {
 		$tw.desktop.gui.Window.open("html/dashboard.html", {
 			id: "tiddlydesktop-dashboard",
 			show: true,
@@ -181,15 +192,15 @@ $tw.boot.boot(function() {
 			min_width: 700,
 			min_height: 500,
 			icon: "images/app-icon.png"
-		}, function(win) {
+		}, function (win) {
 			// Inject $tw immediately (before load)
 			win.window.$tw = $tw;
 			// Re-inject after document is ready to handle any race condition
-			win.once("loaded", function() {
+			win.once("loaded", function () {
 				win.window.$tw = $tw;
 				win.window._twGlobal = global;
 			});
-			win.on("close", function() {
+			win.on("close", function () {
 				gui.App.quit();
 			});
 		});

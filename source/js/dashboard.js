@@ -14,6 +14,7 @@ function showView(id) {
 let currentProjectPath = null;
 let activeDragFilePath = null;
 let activeBoardId = null;
+let projectDirectoryWatcher = null;
 
 // ─── Workspace View ──────────────────────────────────────────────────────────
 function renderWorkspaces() {
@@ -80,7 +81,7 @@ function initWorkspaces() {
     }
     const currentName = projectService.listWorkspaces().find(w => w.id === activeId)?.name;
     if (!confirm(`Are you sure you want to delete the workspace "${currentName}"? All project links inside it will be removed.`)) return;
-    
+
     try {
       projectService.removeWorkspace(activeId);
       renderWorkspaces();
@@ -95,10 +96,10 @@ function initWorkspaces() {
 
 // ─── Dashboard View ──────────────────────────────────────────────────────────
 function initDashboard() {
-  const folderListEl  = document.getElementById("folderList");
-  const addBtn        = document.getElementById("addFolderBtn");
-  const searchInput   = document.getElementById("searchInput");
-  const loader        = document.getElementById("loader");
+  const folderListEl = document.getElementById("folderList");
+  const addBtn = document.getElementById("addFolderBtn");
+  const searchInput = document.getElementById("searchInput");
+  const loader = document.getElementById("loader");
 
   // Update button text
   addBtn.textContent = "Add Project";
@@ -108,9 +109,8 @@ function initDashboard() {
   }
 
   function showDashboardUI() {
-    loader.style.display    = "none";
-    addBtn.style.display    = "";
-    searchInput.style.display = "";
+    loader.style.display = "none";
+    document.getElementById("projectActionBar").style.display = "flex";
     folderListEl.style.display = "";
   }
 
@@ -126,32 +126,10 @@ function initDashboard() {
     const right = document.createElement("div");
     right.className = "badge-container";
 
-    const countSpan = document.createElement("span");
-    countSpan.className = "wiki-count";
-    countSpan.textContent = `${project.wikiCount} wikis`;
-
-    // Rename project
-    const renameProjBtn = document.createElement("button");
-    renameProjBtn.className = "btn rename-btn";
-    renameProjBtn.textContent = "Rename";
-    renameProjBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      const newName = prompt("Enter new project name:", project.name);
-      if (newName && newName.trim() && newName.trim() !== project.name) {
-        try {
-          projectService.renameProject(project.id, newName.trim());
-          loadAndRender();
-          renderWorkspaces();
-        } catch (err) {
-          alert(err.message);
-        }
-      }
-    });
-
-    // Open directory on host file system
+    // Open directory on host file system (Reveal)
     const openFolderBtn = document.createElement("button");
     openFolderBtn.className = "btn open-btn";
-    openFolderBtn.textContent = "Folder";
+    openFolderBtn.textContent = "Reveal";
     openFolderBtn.addEventListener("click", e => {
       e.stopPropagation();
       require("nw.gui").Shell.openItem(project.id);
@@ -173,8 +151,6 @@ function initDashboard() {
       }
     });
 
-    right.appendChild(countSpan);
-    right.appendChild(renameProjBtn);
     right.appendChild(openFolderBtn);
     right.appendChild(deleteBtn);
 
@@ -245,6 +221,46 @@ function initDashboard() {
   };
 }
 
+function setupProjectWatcher(projectPath) {
+  const fs = require("fs");
+  if (projectDirectoryWatcher) {
+    try {
+      projectDirectoryWatcher.close();
+    } catch (e) {
+      console.error("Failed to close watcher:", e);
+    }
+    projectDirectoryWatcher = null;
+  }
+
+  let debounceTimeout = null;
+  try {
+    projectDirectoryWatcher = fs.watch(projectPath, { recursive: true }, (eventType, filename) => {
+      // Ignore hidden files like .tiddlydesk-meta.json or OS metadata like .DS_Store
+      if (filename && (filename.startsWith(".") || filename.includes("/.") || filename.includes("\\."))) {
+        return;
+      }
+      
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        console.log("Project directory changed, refreshing UI...");
+        if (currentProjectPath) {
+          const boards = projectService.listBoards(currentProjectPath);
+          const boardExists = boards.some(b => b.id === activeBoardId);
+          if (!boardExists) {
+            activeBoardId = boards.length > 0 ? boards[0].id : "board_root";
+          }
+          renderBoardsSidebar();
+          loadWikis();
+        }
+      }, 300);
+    });
+  } catch (err) {
+    console.error("Failed to start directory watcher:", err);
+  }
+}
+
 // ─── Kanban Board View ──────────────────────────────────────────────────────
 function openWikiListView(projectPath, projectName) {
   currentProjectPath = projectPath;
@@ -257,12 +273,14 @@ function openWikiListView(projectPath, projectName) {
   if (boards.length > 0) {
     activeBoardId = boards[0].id;
   } else {
-    activeBoardId = "board_default";
+    activeBoardId = "board_root";
   }
 
   showView("wikiListView");
   renderBoardsSidebar();
   loadWikis();
+  
+  setupProjectWatcher(projectPath);
 }
 
 function renderBoardsSidebar() {
@@ -275,60 +293,10 @@ function renderBoardsSidebar() {
   boards.forEach(b => {
     const li = document.createElement("li");
     li.className = "board-nav-item" + (b.id === activeBoardId ? " active" : "");
-    
+
     const nameSpan = document.createElement("span");
     nameSpan.textContent = `${b.name} (${b.reportCount})`;
     li.appendChild(nameSpan);
-
-    const actionsDiv = document.createElement("div");
-    actionsDiv.className = "board-nav-item-actions";
-
-    // Rename Board Button
-    const renameBtn = document.createElement("button");
-    renameBtn.className = "icon-btn";
-    renameBtn.title = "Rename Board";
-    renameBtn.textContent = "✏️";
-    renameBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const newName = prompt("Enter new board name:", b.name);
-      if (newName && newName.trim() && newName.trim() !== b.name) {
-        try {
-          projectService.renameBoard(currentProjectPath, b.id, newName.trim());
-          renderBoardsSidebar();
-        } catch (err) {
-          alert("Error: " + err.message);
-        }
-      }
-    });
-
-    // Delete Board Button
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "icon-btn";
-    deleteBtn.title = "Delete Board";
-    deleteBtn.textContent = "🗑️";
-    deleteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (boards.length <= 1) {
-        alert("A project must have at least one board (swimlane).");
-        return;
-      }
-      if (!confirm(`Are you sure you want to delete board "${b.name}"? All wiki cards inside it will be removed.`)) return;
-      try {
-        projectService.removeBoard(currentProjectPath, b.id);
-        if (activeBoardId === b.id) {
-          const remaining = projectService.listBoards(currentProjectPath);
-          activeBoardId = remaining[0].id;
-        }
-        renderBoardsSidebar();
-        loadWikis();
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    });
-
-    actionsDiv.appendChild(renameBtn);
-    actionsDiv.appendChild(deleteBtn);
-    li.appendChild(actionsDiv);
 
     // Switch board on click
     li.addEventListener("click", () => {
@@ -347,11 +315,11 @@ function renderBoardsSidebar() {
 
 function loadWikis() {
   const term = document.getElementById("searchWikis").value.toLowerCase();
-  
+
   try {
     const wikis = projectService.listReportsByBoard(currentProjectPath, activeBoardId)
       .filter(w => w.name.toLowerCase().includes(term));
-    
+
     renderKanbanBoard(wikis);
   } catch (e) {
     console.error("Failed to load reports:", e);
@@ -379,7 +347,7 @@ function renderKanbanBoard(wikis) {
   Object.keys(columns).forEach(status => {
     const col = columns[status];
     while (col.listEl.firstChild) col.listEl.removeChild(col.listEl.firstChild);
-    
+
     col.countEl.textContent = col.items.length;
 
     if (col.items.length === 0) {
@@ -452,25 +420,8 @@ function createKanbanCard(wiki) {
     }
   });
 
-  // Remove Reference Action
-  const deleteBtn = document.createElement("button");
-  deleteBtn.className = "btn delete-btn";
-  deleteBtn.textContent = "Remove";
-  deleteBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (!confirm(`Remove "${wiki.name}" reference from this board? (No files will be deleted)`)) return;
-    try {
-      projectService.removeReportFromBoard(currentProjectPath, activeBoardId, wiki.filePath);
-      loadWikis();
-      renderBoardsSidebar();
-    } catch (err) {
-      alert("Failed to remove report: " + err.message);
-    }
-  });
-
   actions.appendChild(openBtn);
   actions.appendChild(revealBtn);
-  actions.appendChild(deleteBtn);
   card.appendChild(actions);
 
   // Drag listeners
@@ -492,7 +443,7 @@ function createKanbanCard(wiki) {
 
 function initDragAndDrop() {
   const columnIds = ["col-todo", "col-progress", "col-done"];
-  
+
   columnIds.forEach(id => {
     const col = document.getElementById(id);
     const status = id.replace("col-", "");
@@ -514,7 +465,7 @@ function initDragAndDrop() {
     col.addEventListener("drop", (e) => {
       e.preventDefault();
       col.classList.remove("drag-over");
-      
+
       const filePath = e.dataTransfer.getData("text/plain") || activeDragFilePath;
       if (filePath && currentProjectPath && activeBoardId) {
         try {
@@ -535,46 +486,8 @@ function boot() {
   initDashboard();
   initDragAndDrop();
 
-  const addWikiBtn  = document.getElementById("addWikiBtn");
   const searchWikis = document.getElementById("searchWikis");
-  const backBtn     = document.getElementById("backBtn");
-  const addBoardBtn = document.getElementById("addBoardBtn");
-
-  // File dialog to add wiki reference
-  addWikiBtn.addEventListener("click", () => {
-    if (!currentProjectPath || !activeBoardId) return;
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".html,.htm,.tid";
-    input.onchange = evt => {
-      const file = evt.target.files[0];
-      if (!file || !file.path) return;
-      try { 
-        projectService.addReportToBoard(currentProjectPath, activeBoardId, file.path);
-        loadWikis();
-        renderBoardsSidebar();
-      } catch (err) {
-        alert("Failed to add report: " + err.message);
-      }
-    };
-    input.click();
-  });
-
-  // Board creation button
-  addBoardBtn.addEventListener("click", () => {
-    if (!currentProjectPath) return;
-    const name = prompt("Enter name for new board (swimlane):");
-    if (name && name.trim()) {
-      try {
-        const newId = projectService.addBoard(currentProjectPath, name.trim());
-        activeBoardId = newId;
-        renderBoardsSidebar();
-        loadWikis();
-      } catch (err) {
-        alert("Failed to add board: " + err.message);
-      }
-    }
-  });
+  const backBtn = document.getElementById("backBtn");
 
   // Filter cards on input
   searchWikis.addEventListener("input", () => {
@@ -583,11 +496,33 @@ function boot() {
 
   // Back navigation
   backBtn.addEventListener("click", () => {
+    if (projectDirectoryWatcher) {
+      try {
+        projectDirectoryWatcher.close();
+      } catch (e) {}
+      projectDirectoryWatcher = null;
+    }
     currentProjectPath = null;
     activeBoardId = null;
     showView("dashboardView");
     if (window._dashboardRefresh) window._dashboardRefresh();
   });
+
+  // Refresh button
+  const refreshBtn = document.getElementById("refreshBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      if (currentProjectPath) {
+        const boards = projectService.listBoards(currentProjectPath);
+        const boardExists = boards.some(b => b.id === activeBoardId);
+        if (!boardExists) {
+          activeBoardId = boards.length > 0 ? boards[0].id : "board_root";
+        }
+        renderBoardsSidebar();
+        loadWikis();
+      }
+    });
+  }
 
   // Settings dropdown toggle
   const settingsBtn = document.getElementById("settingsBtn");
@@ -610,7 +545,7 @@ function boot() {
   const aboutBtn = document.getElementById("aboutBtn");
   const aboutModal = document.getElementById("aboutModal");
   const closeAboutBtn = document.getElementById("closeAboutBtn");
-  
+
   if (aboutBtn && aboutModal && closeAboutBtn) {
     aboutBtn.addEventListener("click", (e) => {
       e.stopPropagation();
