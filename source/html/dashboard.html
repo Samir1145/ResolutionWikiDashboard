@@ -710,6 +710,392 @@
       font-size: 0.95rem;
       margin-bottom: 0.5rem;
     }
+
+    /* ─── AGENT PANEL STYLES ─────────────────────────── */
+    .agent-panel-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .agent-panel-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2rem;
+      width: 680px;
+      max-width: 95vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+
+    .agent-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .agent-panel-header h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .agent-panel-header .close-btn {
+      background: var(--tertiary-accent);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .agent-panel-header .close-btn:hover {
+      color: var(--text-color);
+      border-color: var(--danger-accent);
+    }
+
+    .agent-skill-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .skill-btn {
+      background: rgba(59,130,246,0.07);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: var(--text-color);
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-align: left;
+      transition: all 0.2s ease;
+      line-height: 1.4;
+    }
+    .skill-btn:hover, .skill-btn.selected {
+      background: rgba(59,130,246,0.18);
+      border-color: var(--primary-accent);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+    }
+    .skill-btn .skill-icon { font-size: 1.1rem; display: block; margin-bottom: 0.25rem; }
+    .skill-btn .skill-label { font-weight: 600; display: block; font-size: 0.82rem; color: #93c5fd; }
+    .skill-btn .skill-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; display: block; }
+
+    .agent-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .agent-field-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .agent-field-group input {
+      padding: 0.55rem 0.85rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .agent-field-group input:focus {
+      outline: none;
+      border-color: var(--primary-accent);
+      background: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+
+    .agent-run-btn {
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(124,58,237,0.25);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .agent-run-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(124,58,237,0.35);
+    }
+    .agent-run-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .agent-progress-area {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .agent-progress-area.visible { display: flex; }
+
+    .progress-bar-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #3b82f6);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* live agent kanban board */
+    .agent-kanban-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 0.6rem;
+    }
+    .agent-kanban-column {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 6px;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-height: 120px;
+    }
+    .agent-kanban-column h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.2rem;
+    }
+    .agent-kanban-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      flex-grow: 1;
+    }
+    .agent-task-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+      padding: 0.45rem;
+      font-size: 0.7rem;
+      color: #cbd5e1;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .agent-task-card.doing {
+      border-color: #60a5fa;
+      background: rgba(30, 41, 59, 0.9);
+      box-shadow: 0 0 8px rgba(96, 165, 250, 0.25);
+      color: #fff;
+    }
+    .agent-task-card.done {
+      border-color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+      color: #a7f3d0;
+      text-decoration: line-through;
+      opacity: 0.85;
+    }
+    .agent-task-title {
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+    .agent-task-assignee {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .agent-log {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .agent-log .log-success { color: #34d399; }
+    .agent-log .log-error   { color: #f87171; }
+    .agent-log .log-info    { color: #60a5fa; }
+    .agent-log .log-tool    { color: #a78bfa; }
+
+    .agent-result-banner {
+      display: none;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .agent-result-banner.success {
+      display: flex;
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.3);
+      color: #34d399;
+    }
+    .agent-result-banner.error {
+      display: flex;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: #f87171;
+    }
+
+    /* Analyse button on cards */
+    .analyse-btn {
+      background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(59,130,246,0.3)) !important;
+      border: 1px solid rgba(124,58,237,0.4) !important;
+      color: #c4b5fd !important;
+    }
+    .analyse-btn:hover {
+      background: linear-gradient(135deg, rgba(124,58,237,0.5), rgba(59,130,246,0.5)) !important;
+      border-color: #7c3aed !important;
+    }
+
+    /* Analyse Basket styling */
+    .analyse-basket-dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s ease;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .analyse-basket-dropzone.drag-over {
+      border-color: var(--primary-accent);
+      background: rgba(59, 130, 246, 0.08);
+    }
+    .dropzone-placeholder {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+      pointer-events: none;
+    }
+    .basket-item-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .basket-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8rem;
+      color: var(--text-color);
+      gap: 0.5rem;
+    }
+    .basket-item-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 140px;
+    }
+    .basket-item-remove {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .basket-item-remove:hover {
+      color: var(--danger-accent);
+      background: rgba(244, 63, 94, 0.1);
+    }
+
+    /* Agent Panel Selected List */
+    .selected-files-list {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem;
+      max-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .selected-file-item {
+      font-size: 0.82rem;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .selected-file-item::before {
+      content: "📄";
+      font-size: 0.85rem;
+    }
+
   </style>
 </head>
 <body>
@@ -750,15 +1136,31 @@
       <button id="backBtn" class="btn back-btn">← Back to Projects</button>
       <h1 id="projectTitle" class="project-title">Project: </h1>
       <button id="refreshBtn" class="btn open-btn" style="margin-left: 10px;" title="Refresh from Disk">🔄 Refresh</button>
+      <button id="agentDemoBtn" class="btn open-btn" style="margin-left: 10px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-color: #6366f1; color: white;" title="Open Kaiban Playground Demo">🚀 Agent Demo</button>
     </div>
     
     <div class="project-layout">
       <!-- SIDEBAR FOR SWIMLANES / BOARDS -->
-      <aside class="project-sidebar">
-        <input type="text" id="searchWikis" placeholder="Search reports..." style="margin-bottom: 1.5rem; width: 100%; box-sizing: border-box;" />
-        <ul id="boardList" class="board-nav-list">
-          <!-- Dynamic board items -->
-        </ul>
+      <aside class="project-sidebar" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="text" id="searchWikis" placeholder="Search reports..." style="margin-bottom: 0.5rem; width: 100%; box-sizing: border-box;" />
+          <ul id="boardList" class="board-nav-list">
+            <!-- Dynamic board items -->
+          </ul>
+        </div>
+        
+        <!-- Analyse Basket Dropzone -->
+        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <div class="sidebar-section-title" style="margin-bottom: 0.25rem;">
+            <span>Analyse Basket</span>
+            <button id="clearBasketBtn" class="icon-btn" title="Clear Basket" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; display: flex; align-items: center; justify-content: center;">🗑️</button>
+          </div>
+          <div id="analyseBasket" class="analyse-basket-dropzone">
+            <div class="dropzone-placeholder" id="basketPlaceholder">Drag reports here to analyse multiple files</div>
+            <ul id="basketItemList" class="basket-item-list" style="display: none;"></ul>
+          </div>
+          <button id="analyseBasketBtn" class="btn analyse-btn" style="margin: 0; width: 100%; box-sizing: border-box; display: none;">🤖 Analyse Basket (0)</button>
+        </div>
       </aside>
 
       <!-- KANBAN BOARD CONTENT -->
@@ -871,6 +1273,97 @@
       });
     });
   </script>
+  <!-- AGENT PANEL MODAL -->
+  <div id="agentPanelOverlay" class="agent-panel-overlay" style="display: none;">
+    <div class="agent-panel-card">
+      <div class="agent-panel-header">
+        <h2>🤖 IBC Agentic Analysis</h2>
+        <button class="close-btn" id="closeAgentPanelBtn">✕</button>
+      </div>
+
+      <!-- SKILL SELECTOR -->
+      <div class="agent-field-group">
+        <label>Select Skill</label>
+        <div class="agent-skill-grid" id="agentSkillGrid">
+          <button class="skill-btn selected" data-skill="section_29a" id="skillBtn_section_29a">
+            <span class="skill-icon">⚖️</span>
+            <span class="skill-label">Section 29A Verification</span>
+            <span class="skill-desc">Eligibility check — all disqualification criteria (a)–(j)</span>
+          </button>
+          <button class="skill-btn" data-skill="statutory_plan_audit" id="skillBtn_statutory_plan_audit">
+            <span class="skill-icon">📋</span>
+            <span class="skill-label">Statutory Plan Audit</span>
+            <span class="skill-desc">IBC S.30(2) + CIRP Reg.38 compliance matrix</span>
+          </button>
+          <button class="skill-btn" data-skill="valuation_reconciliation" id="skillBtn_valuation_reconciliation">
+            <span class="skill-icon">📊</span>
+            <span class="skill-label">Valuation Reconciliation</span>
+            <span class="skill-desc">Cross-reference two valuer reports + haircut analysis</span>
+          </button>
+          <button class="skill-btn" data-skill="investor_fit" id="skillBtn_investor_fit">
+            <span class="skill-icon">🏢</span>
+            <span class="skill-label">Investor Fit Analysis</span>
+            <span class="skill-desc">6-dimension applicant capability assessment for CoC</span>
+          </button>
+          <button class="skill-btn" data-skill="plan_comparison" id="skillBtn_plan_comparison">
+            <span class="skill-icon">⚡</span>
+            <span class="skill-label">Plan Comparison (A vs B)</span>
+            <span class="skill-desc">Head-to-head comparison of two competing resolution plans</span>
+          </button>
+          <button class="skill-btn" data-skill="demo_kaiban" id="skillBtn_demo_kaiban">
+            <span class="skill-icon">🚀</span>
+            <span class="skill-label">KaibanJS Demo Team</span>
+            <span class="skill-desc">Collaborative Researcher + Writer demo team</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MULTI-FILE LIST (shown only when analysing basket/multiple files) -->
+      <div id="agentMultiFileContainer" style="display: none; flex-direction: column; gap: 0.5rem;">
+        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Selected Reports for Analysis</label>
+        <div id="agentSelectedFilesList" class="selected-files-list"></div>
+      </div>
+
+      <!-- DYNAMIC INPUTS (rendered by JS) -->
+      <div id="agentInputFields" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+
+      <!-- MODEL SELECTOR -->
+      <div class="agent-field-group">
+        <label>Local Model (Ollama)</label>
+        <input type="text" id="agentModelInput" value="hermes3" placeholder="e.g. hermes3, llama3, mistral" />
+      </div>
+
+      <!-- RUN BUTTON -->
+      <button class="agent-run-btn" id="agentRunBtn">▶ Run Analysis</button>
+
+      <!-- PROGRESS + LOG -->
+      <div class="agent-progress-area" id="agentProgressArea">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="agentProgressFill"></div>
+        </div>
+
+        <!-- Visual Agent Kanban Board -->
+        <div class="agent-kanban-container" id="agentKanbanContainer">
+          <div class="agent-kanban-column" id="ak-col-todo">
+            <h4>To Do</h4>
+            <div class="agent-kanban-cards" id="ak-list-todo"></div>
+          </div>
+          <div class="agent-kanban-column" id="ak-col-doing">
+            <h4>Doing</h4>
+            <div class="agent-kanban-cards" id="ak-list-doing"></div>
+          </div>
+          <div class="agent-kanban-column" id="ak-col-done">
+            <h4>Done</h4>
+            <div class="agent-kanban-cards" id="ak-list-done"></div>
+          </div>
+        </div>
+
+        <div class="agent-log" id="agentLog"></div>
+        <div class="agent-result-banner" id="agentResultBanner"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ABOUT MODAL OVERLAY -->
   <div id="aboutModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
