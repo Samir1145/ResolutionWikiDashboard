@@ -35,6 +35,10 @@ function removeWorkspace(id) {
   if (id === "default") {
     throw new Error("Cannot delete the Default Workspace.");
   }
+  const ws = cfg.workspaces.find(w => w.id === id);
+  if (ws && ws.projects && ws.projects.length > 0) {
+    throw new Error("Cannot delete workspace until all projects within it are deleted.");
+  }
   cfg.workspaces = cfg.workspaces.filter(w => w.id !== id);
   if (cfg.activeWorkspaceId === id) {
     cfg.activeWorkspaceId = "default";
@@ -95,6 +99,18 @@ function removeProject(projectPath) {
   const cfg = config.getConfig();
   const ws = cfg.workspaces.find(w => w.id === getActiveWorkspaceId());
   if (ws) {
+    let wikiCount = 0;
+    try {
+      const boards = listBoards(projectPath);
+      boards.forEach(b => {
+        wikiCount += b.reportCount;
+      });
+    } catch (e) {
+      console.error(`Failed to list boards for project ${projectPath}:`, e);
+    }
+    if (wikiCount > 0) {
+      throw new Error("Cannot remove project until all files/reports in the report dashboard are deleted.");
+    }
     ws.projects = ws.projects.filter(p => p.id !== projectPath);
     config.setConfig(cfg);
   }

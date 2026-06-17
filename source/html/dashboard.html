@@ -433,7 +433,8 @@
     }
     
     .project-sidebar {
-      width: 250px;
+      position: relative; /* Add this so resizer aligns correctly */
+      width: 260px;
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -443,6 +444,40 @@
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      transition: width 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
+      opacity: 1;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    
+    .project-sidebar.collapsed {
+      width: 0;
+      padding: 0;
+      margin: 0;
+      border: 0 solid transparent;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .project-sidebar.resizing {
+      transition: none !important;
+    }
+
+    .sidebar-resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      background: transparent;
+      transition: background-color 0.2s;
+      z-index: 100;
+    }
+
+    .sidebar-resizer:hover,
+    .sidebar-resizer.resizing {
+      background: rgba(59, 130, 246, 0.4);
     }
     
     .board-content {
@@ -450,6 +485,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-width: 0;
     }
     
     .board-header-row {
@@ -542,6 +578,109 @@
     .board-nav-item-actions .icon-btn:hover {
       color: var(--text-color);
       background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* AGENT SIDEBAR (RIGHT) */
+    .agent-sidebar {
+      width: 260px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      transition: width 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
+      opacity: 1;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .agent-sidebar.collapsed {
+      width: 0;
+      padding: 0;
+      margin: 0;
+      border: 0 solid transparent;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Sidebar tab active classes */
+    .sidebar-tab.active {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: var(--text-color) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Paperclip icon hover */
+    .paperclip-btn:hover {
+      color: var(--text-color) !important;
+      transform: rotate(15deg) scale(1.1);
+    }
+    
+    /* Pulsing Loader bar */
+    .rag-loader {
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .rag-loader-bar {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, #4f46e5, #7c3aed, #4f46e5);
+      background-size: 200% 100%;
+      animation: ragGlowPulse 1.5s infinite linear;
+      border-radius: 2px;
+    }
+    @keyframes ragGlowPulse {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+    
+    /* Markdown answers typography */
+    .rag-answer-container h1, .rag-answer-container h2, .rag-answer-container h3 {
+      font-size: 0.95rem;
+      margin: 0.5rem 0 0.25rem 0;
+      color: var(--text-color);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 2px;
+    }
+    .rag-answer-container p {
+      margin: 0 0 0.5rem 0;
+    }
+    .rag-answer-container ul, .rag-answer-container ol {
+      margin: 0 0 0.5rem 0;
+      padding-left: 1.2rem;
+    }
+    .rag-answer-container li {
+      margin-bottom: 2px;
+    }
+    .rag-answer-container strong {
+      color: var(--text-color);
+      font-weight: 600;
+    }
+    .rag-answer-container code {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.75rem;
+    }
+    .rag-answer-container table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.5rem 0;
+      font-size: 0.75rem;
+    }
+    .rag-answer-container th, .rag-answer-container td {
+      border: 1px solid var(--border-color);
+      padding: 4px 6px;
+      text-align: left;
+    }
+    .rag-answer-container th {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-color);
     }
 
     /* SETTINGS CONTAINER & DROPDOWN */
@@ -1134,31 +1273,89 @@
     <div class="wiki-list-header">
       <button id="backBtn" class="btn back-btn">← Back to Projects</button>
       <h1 id="projectTitle" class="project-title">Project: </h1>
-      <button id="refreshBtn" class="btn open-btn" style="margin-left: 10px;" title="Refresh from Disk">🔄 Refresh</button>
-      <button id="agentDemoBtn" class="btn open-btn" style="margin-left: 10px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-color: #6366f1; color: white;" title="Open Kaiban Playground Demo">🚀 Agent Demo</button>
+      <button id="toggleSidebarBtn" class="btn open-btn" style="margin-left: 10px;" title="Toggle Sidebar">Sidebar</button>
     </div>
     
     <div class="project-layout">
-      <!-- SIDEBAR FOR SWIMLANES / BOARDS -->
-      <aside class="project-sidebar" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <input type="text" id="searchWikis" placeholder="Search reports..." style="margin-bottom: 0.5rem; width: 100%; box-sizing: border-box;" />
+      <!-- SIDEBAR FOR SWIMLANES / BOARDS / AGENTS / RAG -->
+      <aside id="unifiedSidebar" class="project-sidebar" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div id="sidebarResizer" class="sidebar-resizer" title="Drag to resize sidebar"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-shrink: 0;">
+          <h3 id="sidebarHeaderTitle" style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-color);">Project Sidebar</h3>
+          <button id="closeSidebarBtn" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: bold;" title="Close Sidebar">✕</button>
+        </div>
+
+        <!-- 3-Way Tab Switcher -->
+        <div class="sidebar-tabs" style="display: flex; gap: 0.25rem; background: rgba(255, 255, 255, 0.05); padding: 0.2rem; border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid var(--border-color); flex-shrink: 0;">
+          <button id="tabFoldersBtn" class="sidebar-tab active" style="flex: 1; background: transparent; border: none; color: var(--text-color); font-size: 0.8rem; font-weight: 500; padding: 0.4rem; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">📂 Folders</button>
+          <button id="tabAgentsBtn" class="sidebar-tab" style="flex: 1; background: transparent; border: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 500; padding: 0.4rem; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">🤖 Agents</button>
+          <button id="tabRagBtn" class="sidebar-tab" style="flex: 1; background: transparent; border: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 500; padding: 0.4rem; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">🔍 RAG</button>
+        </div>
+
+        <!-- FOLDERS TAB CONTENT -->
+        <div id="foldersTabContent" style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1; overflow-y: auto;">
+          <input type="text" id="searchWikis" placeholder="Search reports..." style="margin-bottom: 0.15rem; width: 100%; box-sizing: border-box;" />
+          <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; user-select: none; margin-bottom: 0.25rem;">
+            <input type="checkbox" id="semanticSearchToggle" style="margin: 0; cursor: pointer;" />
+            <span>🔍 Semantic Search (Local RAG)</span>
+          </label>
           <ul id="boardList" class="board-nav-list">
             <!-- Dynamic board items -->
           </ul>
         </div>
-        
-        <!-- Analyse Basket Dropzone -->
-        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-          <div class="sidebar-section-title" style="margin-bottom: 0.25rem;">
-            <span>Analyse Basket</span>
-            <button id="clearBasketBtn" class="icon-btn" title="Clear Basket" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; display: flex; align-items: center; justify-content: center;">🗑️</button>
+
+        <!-- AGENTS TAB CONTENT -->
+        <div id="agentsTabContent" style="display: none; flex-direction: column; gap: 1rem; flex: 1; overflow-y: auto;">
+          <button id="agentDemoBtn" class="btn open-btn" style="margin: 0; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-color: #6366f1; color: white; width: 100%; box-sizing: border-box;" title="Open Kaiban Playground Demo">🚀 Agent Demo</button>
+          
+          <!-- Analyse Basket Dropzone -->
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+            <div class="sidebar-section-title" style="margin-bottom: 0.25rem;">
+              <span>Analyse Basket</span>
+              <button id="clearBasketBtn" class="icon-btn" title="Clear Basket" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; display: flex; align-items: center; justify-content: center;">🗑️</button>
+            </div>
+            <div id="analyseBasket" class="analyse-basket-dropzone">
+              <div class="dropzone-placeholder" id="basketPlaceholder">Drag reports here to analyse multiple files</div>
+              <ul id="basketItemList" class="basket-item-list" style="display: none;"></ul>
+            </div>
+            <button id="analyseBasketBtn" class="btn analyse-btn" style="margin: 0; width: 100%; box-sizing: border-box; display: none;">🤖 Analyse Basket (0)</button>
           </div>
-          <div id="analyseBasket" class="analyse-basket-dropzone">
-            <div class="dropzone-placeholder" id="basketPlaceholder">Drag reports here to analyse multiple files</div>
-            <ul id="basketItemList" class="basket-item-list" style="display: none;"></ul>
+        </div>
+
+        <!-- LOCAL RAG TAB CONTENT -->
+        <div id="ragTabContent" style="display: none; flex-direction: column; gap: 1rem; flex: 1; overflow-y: auto;">
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;" id="ragProjectScopeLabel">Scope: Active Project Files</span>
+            
+            <div style="position: relative; display: flex; align-items: center;">
+              <textarea id="ragQueryInput" placeholder="Ask a question about project files..." style="width: 100%; height: 85px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 2.2rem 0.5rem 0.5rem; color: var(--text-color); font-size: 0.82rem; font-family: inherit; resize: none; box-sizing: border-box; outline: none;"></textarea>
+              <button id="ragUploadBtn" class="paperclip-btn" title="Upload document to project folder" style="position: absolute; right: 8px; bottom: 8px; background: transparent; border: none; color: var(--text-muted); font-size: 1.15rem; cursor: pointer; padding: 4px; transition: all 0.25s ease; outline: none; display: flex; align-items: center; justify-content: center;">📎</button>
+              <input type="file" id="ragFileInput" multiple style="display: none;" />
+            </div>
+            
+            <button id="ragAskBtn" class="btn open-btn" style="margin: 0; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #10b981, #059669); border-color: #059669; color: white;">Ask Local LLM</button>
           </div>
-          <button id="analyseBasketBtn" class="btn analyse-btn" style="margin: 0; width: 100%; box-sizing: border-box; display: none;">🤖 Analyse Basket (0)</button>
+
+          <!-- Pulsing glowing loader for generation -->
+          <div id="ragLoader" class="rag-loader" style="display: none;">
+            <div class="rag-loader-bar"></div>
+            <div id="ragLoaderText" style="font-size: 0.72rem; color: var(--text-muted); text-align: center; margin-top: 4px;">⚡ Ingesting local documents...</div>
+          </div>
+
+          <!-- Answer box -->
+          <div id="ragAnswerContainer" class="rag-answer-container" style="display: none; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.8rem; font-size: 0.82rem; line-height: 1.45; color: var(--text-color); overflow-y: auto; max-height: 280px; flex: 1;">
+          </div>
+
+          <!-- Save Answer & Sources attribution panel -->
+          <div id="ragFooter" style="display: none; flex-direction: column; gap: 0.5rem; margin-top: auto; flex-shrink: 0;">
+            <button id="ragSaveReportBtn" class="btn" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 0.78rem; padding: 0.4rem 0.8rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-color); cursor: pointer;">💾 Save as Report</button>
+            
+            <details id="ragSourcesDetails" style="border: 1px solid var(--border-color); border-radius: 6px; background: rgba(0,0,0,0.12); padding: 0.4rem; cursor: pointer;">
+              <summary style="font-size: 0.72rem; color: var(--text-muted); cursor: pointer; outline: none; user-select: none;">🔍 Context Sources used</summary>
+              <ul id="ragSourcesList" style="margin: 0.4rem 0 0 0; padding-left: 1.1rem; font-size: 0.72rem; color: var(--text-muted); list-style-type: disc; cursor: default;">
+              </ul>
+            </details>
+          </div>
         </div>
       </aside>
 
@@ -1188,8 +1385,26 @@
           </div>
         </div>
       </main>
+
+      <script>
+        (function() {
+          try {
+            const path = require("path");
+            const fs = require("fs");
+            const nw = window.nw || require("nw.gui");
+            const settingsPath = path.join(nw.App.dataPath, "bazaar-settings.json");
+            if (fs.existsSync(settingsPath)) {
+              const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+              if (settings.sidebarCollapsed) {
+                document.getElementById("unifiedSidebar").classList.add("collapsed");
+              }
+            }
+          } catch (e) {}
+        })();
+      </script>
     </div>
   </div>
+
 
   <script>
     (function() {

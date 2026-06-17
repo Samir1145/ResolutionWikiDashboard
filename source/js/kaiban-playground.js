@@ -3,7 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { Agent, Task, Team } = require("kaibanjs");
+const { spawn } = require("child_process");
 
 // DOM ELEMENTS
 const providerInput = document.getElementById("providerInput");
@@ -226,260 +226,95 @@ async function runPlaygroundTeam() {
   logTerminal.innerHTML = "";
   log("Initializing Resume Creation Team...", "info");
 
-  // Inputs
   const provider = providerInput.value;
   const apiKey = apiKeyInput.value.trim() || (provider === "gemini" ? process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ENV_GEMINI_KEY : process.env.OPENAI_API_KEY || "");
   const model = modelSelect.value;
   const aboutMeText = aboutMeInput.value.trim();
 
-  // ── DEBUG ──────────────────────────────────────────────────
-  console.group("🚀 [KaibanPlayground] runPlaygroundTeam");
-  console.log("Provider :", provider);
-  console.log("Model    :", model);
-  console.log("API key length:", apiKey ? apiKey.length : 0, "| first 8 chars:", apiKey ? apiKey.substring(0, 8) + "…" : "(none)");
-  console.log("aboutMe  :", aboutMeText.substring(0, 80) + "…");
-  // ───────────────────────────────────────────────────────────
-
   if (!apiKey) {
     log(`Error: API Key is required. Please input a key for ${provider}.`, "error");
-    console.error("[KaibanPlayground] No API key provided – aborting.");
-    console.groupEnd();
     isExecuting = false;
     btnStartTeam.disabled = false;
     btnStartTeam.textContent = "▶ Start Resume Team";
     return;
   }
 
-  const llmConfig = {
-    provider: provider === "gemini" ? "google" : "openai",
-    model: model,
-    apiKey: apiKey
-  };
+  log(`Using model: ${model} (${provider === "gemini" ? "Google" : "OpenAI"})`, "info");
+  log("Spawning background agent process...", "info");
 
-  console.log("llmConfig:", JSON.stringify({ ...llmConfig, apiKey: llmConfig.apiKey.substring(0, 8) + "…" }));
-  log(`Using model: ${model} (${llmConfig.provider})`, "info");
+  try {
+    const runAgentPath = path.join(__dirname, "run_agent.js");
+    const child = spawn("node", [runAgentPath]);
 
-  // Define Agents
-  const profileAnalyst = new Agent({
-    name: "Mary",
-    role: "Profile Analyst",
-    goal: "Extract structured information from conversational user input.",
-    background: "Data Processor",
-    tools: [],
-    llmConfig
-  });
+    // Pass configuration to child stdin
+    child.stdin.write(JSON.stringify({
+      provider,
+      apiKey,
+      model,
+      aboutMeText
+    }));
+    child.stdin.end();
 
-  const resumeWriter = new Agent({
-    name: "Alex Mercer",
-    role: "Resume Writer",
-    goal: "Craft compelling, well-structured resumes that effectively showcase job seekers qualifications.",
-    background: "Recruiter and professional resume writer.",
-    tools: [],
-    llmConfig
-  });
+    let stdoutData = "";
+    child.stdout.on("data", data => {
+      stdoutData += data.toString();
+      const lines = stdoutData.split("\n");
+      stdoutData = lines.pop(); // save partial line
 
-  // Define Tasks
-  const processingTask = new Task({
-    description: `Extract relevant details such as name, experience, skills, and job history from the user's 'aboutMe' input. aboutMe: ${aboutMeText}`,
-    expectedOutput: "Structured data ready to be used for a resume creation.",
-    agent: profileAnalyst
-  });
-
-  const resumeCreationTask = new Task({
-    description: `Utilize the structured data to create a detailed and attractive resume. Enrich the resume content by inferring additional details. Include sections such as a personal summary, detailed work experience, skills, and educational background.`,
-    expectedOutput: "A professionally formatted resume in markdown format.",
-    agent: resumeWriter
-  });
-
-  console.log("[KaibanPlayground] Agents and tasks created. Building Team…");
-
-    let unsubscribe = null;
-    try {
-      const team = new Team({
-        name: "Resume Creation Team",
-        agents: [profileAnalyst, resumeWriter],
-        tasks: [processingTask, resumeCreationTask],
-        env: {
-          GEMINI_API_KEY: apiKey,
-          OPENAI_API_KEY: apiKey
-        }
-      });
-
-      console.log("[KaibanPlayground] Team created. Store:", typeof team.getStore());
-      console.log("[KaibanPlayground] Initial store state (tasks):", team.getStore().getState().tasks.map(t => ({ title: t.title, status: t.status })));
-
-      // Setup Zustand store subscription for real-time tracking
-      const store = team.getStore();
-      let lastProcessedIndex = 0;
-      
-      unsubscribe = store.subscribe((state) => {
-        const logs = state.workflowLogs;
-        if (!logs) return;
-        
-        while (lastProcessedIndex < logs.length) {
-          const logEntry = logs[lastProcessedIndex];
-          lastProcessedIndex++;
-
-          // ── RAW LOG DUMP ─────────────────────────────────────
-          console.log(`[KaibanPlayground] LOG[${lastProcessedIndex - 1}] type=${logEntry.logType}`, JSON.stringify({
-            logType: logEntry.logType,
-            workflowStatus: logEntry.workflowStatus,
-            taskStatus: logEntry.taskStatus,
-            agentStatus: logEntry.agentStatus,
-            task: logEntry.task ? { title: logEntry.task.title, status: logEntry.task.status } : null,
-            agent: logEntry.agent ? { name: logEntry.agent.name, status: logEntry.agent.status } : null,
-            metadata: logEntry.metadata
-          }, null, 2));
-          // ─────────────────────────────────────────────────────
-          
-          if (logEntry.logType === "WorkflowStatusUpdate") {
-            const wfSt = logEntry.workflowStatus || "";
-            const msg = (logEntry.metadata && logEntry.metadata.message) || "";
-            const err = (logEntry.metadata && logEntry.metadata.error) || "";
-            if (wfSt === "FINISHED") {
-              log(`✅ Workflow: ${wfSt}`, "success");
-            } else if (wfSt === "BLOCKED" || wfSt === "ERRORED") {
-              log(`❌ Workflow: ${wfSt}${err ? " — " + err : ""}${msg ? " — " + msg : ""}`, "error");
-            } else if (wfSt) {
-              log(`ℹ️ Workflow: ${wfSt}${msg ? " — " + msg : ""}`, "info");
-            }
-
-          } else if (logEntry.logType === "TaskStatusUpdate") {
-            const task = logEntry.task;
-            const status = logEntry.taskStatus;
-            if (task && status) {
-              let cardId = "";
-              const taskTitle = task.title || "";
-              const taskDesc = task.description || "";
-              const agentName = task.agent ? task.agent.name : "";
-              
-              if (taskTitle.toLowerCase().includes("extract") || taskDesc.toLowerCase().includes("extract") || agentName === "Mary") {
-                cardId = "card-task-zoe";
-              } else {
-                cardId = "card-task-alex";
-              }
-              
-              // Show error reason if blocked
-              let statusMsg = `[Task: ${taskTitle || taskDesc.substring(0, 30)}...] → ${status}`;
-              if ((status === "BLOCKED" || status === "ERROR") && logEntry.metadata && logEntry.metadata.error) {
-                const errText = logEntry.metadata.error.message || String(logEntry.metadata.error);
-                statusMsg += ` (${errText})`;
-                console.error("[KaibanPlayground] Task blocked/errored:", logEntry.metadata.error);
-              }
-              log(statusMsg, status === "DONE" ? "success" : status === "BLOCKED" || status === "ERROR" ? "error" : "info");
-              
-              // Map BLOCKED → DOING visually so card stays on-board rather than disappearing
-              const visualStatus = (status === "BLOCKED" || status === "ERROR") ? "BLOCKED" : status;
-              moveTaskCard(cardId, visualStatus);
-            }
-
-          } else if (logEntry.logType === "AgentStatusUpdate") {
-            const agent = logEntry.agent;
-            if (agent) {
-              let thought = null;
-              if (logEntry.metadata) {
-                if (logEntry.metadata.thought) {
-                  thought = logEntry.metadata.thought;
-                } else if (logEntry.metadata.output && logEntry.metadata.output.thought) {
-                  thought = logEntry.metadata.output.thought;
-                } else if (logEntry.metadata.message) {
-                  thought = logEntry.metadata.message;
-                } else if (logEntry.metadata.error) {
-                  const errMsg = logEntry.metadata.error.message || String(logEntry.metadata.error);
-                  thought = `⚠️ Error: ${errMsg}`;
-                  console.error("[KaibanPlayground] Agent error:", logEntry.metadata.error);
-                }
-              }
-              
-              if (thought) {
-                const isErr = thought.startsWith("⚠️");
-                log(`🤖 [Agent: ${agent.name}] ${thought}`, isErr ? "error" : "thought");
-              }
-            }
-          }
-        }
-      });
-
-      log("Starting orchestration...", "info");
-      console.log("[KaibanPlayground] Calling team.start()…");
-      const workflowResult = await team.start();
-
-      // ── RESULT DUMP ───────────────────────────────────────
-      console.log("[KaibanPlayground] team.start() resolved. workflowResult:", workflowResult);
-      console.log("[KaibanPlayground] processingTask.result   :", processingTask.result);
-      console.log("[KaibanPlayground] processingTask.status   :", processingTask.status);
-      console.log("[KaibanPlayground] resumeCreationTask.result:", resumeCreationTask.result);
-      console.log("[KaibanPlayground] All task statuses:", (team.getStore().getState().tasks || []).map(t => ({ title: t.title, status: t.status, result: t.result })));
-      // ─────────────────────────────────────────────────────
-      
-      // workflowResult is { status, result, stats } – not a plain string
-      const wfStatus = workflowResult && workflowResult.status ? workflowResult.status : "UNKNOWN";
-      if (wfStatus === "FINISHED") {
-        log("Collaboration completed successfully! ✅", "success");
-      } else if (wfStatus === "BLOCKED") {
-        log(`⚠️ Workflow ended with status: ${wfStatus}. Check agent API key / model quota. Extracting partial output…`, "error");
-      } else {
-        log(`Workflow ended with status: ${wfStatus}`, "info");
-      }
-
-      // Helper: safely coerce TaskResult (string | object | unknown) to a plain string
-      function coerceToString(val) {
-        if (val == null) return "";
-        if (typeof val === "string") return val;
-        // Some TaskResult objects have a .result or .output field
-        if (typeof val === "object") {
-          if (typeof val.result === "string") return val.result;
-          if (typeof val.output === "string") return val.output;
-          if (typeof val.finalAnswer === "string") return val.finalAnswer;
-          return JSON.stringify(val, null, 2);
-        }
-        return String(val);
-      }
-
-      // Prefer the last task's result, then the workflow result, then empty
-      const rawOutput =
-        coerceToString(resumeCreationTask.result) ||
-        coerceToString(workflowResult && workflowResult.result) ||
-        "";
-
-      console.log("[KaibanPlayground] rawOutput type:", typeof rawOutput, "| length:", rawOutput.length, "| preview:", rawOutput.substring(0, 120));
-      generatedResumeMarkdown = rawOutput;
-
-      if (generatedResumeMarkdown) {
-        // Render markdown preview
-        resumePreview.innerHTML = markdownToHtml(generatedResumeMarkdown);
-        
-        // Switch to output tab
-        if (window.switchTab) {
-          window.switchTab("resume");
-        }
-
-        // Enable Save
-        if (window.currentProjectPath) {
-          btnSaveResume.disabled = false;
-          btnSaveResume.textContent = "💾 Save to Board";
-        }
-      } else {
-        log("⚠️ No resume output was generated. The model may have been blocked or returned an empty response. Try again or switch to a different model.", "error");
-      }
-
-    } catch (err) {
-      console.error("[KaibanPlayground] Caught exception:", err);
-      console.error("[KaibanPlayground] Stack:", err.stack);
-      log(`Orchestration failed: ${err.message}`, "error");
-    } finally {
-      console.groupEnd();
-      if (unsubscribe) {
+      for (const line of lines) {
+        if (!line.trim()) continue;
         try {
-          unsubscribe();
-        } catch (e) {
-          console.error("Failed to unsubscribe store:", e);
+          const payload = JSON.parse(line);
+          if (payload.type === "log") {
+            log(payload.message, payload.style);
+          } else if (payload.type === "task") {
+            log(payload.message, payload.style);
+            moveTaskCard(payload.cardId, payload.status);
+          } else if (payload.type === "agent") {
+            log(`🤖 [Agent: ${payload.name}] ${payload.thought}`, payload.style);
+          } else if (payload.type === "result") {
+            generatedResumeMarkdown = payload.markdown;
+            if (generatedResumeMarkdown) {
+              resumePreview.innerHTML = markdownToHtml(generatedResumeMarkdown);
+              if (window.switchTab) {
+                window.switchTab("resume");
+              }
+              if (window.currentProjectPath) {
+                btnSaveResume.disabled = false;
+                btnSaveResume.textContent = "💾 Save to Board";
+              }
+            }
+          } else if (payload.type === "error") {
+            log(`❌ Error: ${payload.message}`, "error");
+          }
+        } catch (err) {
+          console.log("[run_agent raw stdout]:", line);
         }
       }
+    });
+
+    child.stderr.on("data", data => {
+      console.error("[run_agent stderr]:", data.toString());
+    });
+
+    child.on("close", code => {
       isExecuting = false;
       btnStartTeam.disabled = false;
       btnStartTeam.textContent = "▶ Start Resume Team";
-    }
+      if (code === 0) {
+        log("Collaboration completed successfully! ✅", "success");
+      } else {
+        log(`Agent execution terminated with exit code ${code}`, "error");
+      }
+    });
+
+  } catch (err) {
+    console.error("[KaibanPlayground] Spawning exception:", err);
+    log(`Orchestration failed to start: ${err.message}`, "error");
+    isExecuting = false;
+    btnStartTeam.disabled = false;
+    btnStartTeam.textContent = "▶ Start Resume Team";
+  }
 }
 
 // SAVE RESUME TO BOARD

@@ -7,3 +7,8 @@ node_modules/
 source/tiddlywiki/
 scratch_user_data/
 v8.log
+
+# Environment variables - NEVER commit secrets
+.env
+.env.local
+.env.*.local

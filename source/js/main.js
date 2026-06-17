@@ -199,6 +199,7 @@ $tw.boot.boot(function () {
 			win.once("loaded", function () {
 				win.window.$tw = $tw;
 				win.window._twGlobal = global;
+				$tw.desktop.utils.devtools.trapDevTools(win, win.window.document);
 			});
 			win.on("close", function () {
 				gui.App.quit();

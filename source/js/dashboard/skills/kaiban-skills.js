@@ -2,7 +2,7 @@
 "use strict";
 
 const path = require("path");
-const { Agent, Task, Team } = require("kaibanjs");
+// kaibanjs is dynamically imported in each skill build method below to prevent Blink renderer crash
 
 module.exports = {
   // ─── Section 29A Eligibility Verification ──────────────────────────────────
@@ -10,6 +10,7 @@ module.exports = {
     displayName: "Section 29A Compliance Verification",
     description: "Verifies resolution applicant eligibility under IBC Section 29A disqualification criteria using collaborating agents.",
     build(params, tools, llmConfig) {
+      const { Agent, Task, Team } = require("kaibanjs");
       const auditor = new Agent({
         name: "Insolvency Compliance Expert",
         role: "Legal Auditor",
@@ -63,6 +64,7 @@ Parameters:
     displayName: "Statutory Plan Audit",
     description: "Performs audit of resolution plans for IBC Section 30(2) and CIRP Regulation 38 compliance.",
     build(params, tools, llmConfig) {
+      const { Agent, Task, Team } = require("kaibanjs");
       const auditor = new Agent({
         name: "Resolution Plan Auditor",
         role: "Compliance Auditor",
@@ -116,6 +118,7 @@ Parameters:
     displayName: "Valuation Reconciliation",
     description: "Cross-references two independent valuer reports and calculates haircuts for Committee of Creditors review.",
     build(params, tools, llmConfig) {
+      const { Agent, Task, Team } = require("kaibanjs");
       const extractor = new Agent({
         name: "Valuation Auditor",
         role: "Financial Extractor",
@@ -177,6 +180,7 @@ Parameters:
     displayName: "Investor Fit Analysis",
     description: "Evaluates applicant capability, financial strength, and sector fit for reviving the Corporate Debtor.",
     build(params, tools, llmConfig) {
+      const { Agent, Task, Team } = require("kaibanjs");
       const profileAnalyst = new Agent({
         name: "Corporate Profiler",
         role: "Financial Analyst",
@@ -246,6 +250,7 @@ Parameters:
     displayName: "Plan Comparison",
     description: "Performs head-to-head quantitative and qualitative comparison between two competing resolution plans.",
     build(params, tools, llmConfig) {
+      const { Agent, Task, Team } = require("kaibanjs");
       const analystA = new Agent({
         name: "Auditor Plan A",
         role: "Financial Analyst",
@@ -316,6 +321,7 @@ Parameters:
     displayName: "KaibanJS Demo Team",
     description: "Collaborative Researcher + Writer demo team that researches KaibanJS and generates an introduction report.",
     build(params, tools, llmConfig) {
+      const { Agent, Task, Team } = require("kaibanjs");
       const targetPath = path.join(params.boardPath, params.outputName);
 
       const researcher = new Agent({
