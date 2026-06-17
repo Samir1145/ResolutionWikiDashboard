@@ -201,47 +201,15 @@ function boot() {
     });
   }
 
-  // Step 8: Setup Sidebar Panel collapse buttons and save status locally
-  const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
-  const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+  // Step 8 (removed): Sidebar toggle/close buttons deleted.
+  // The sidebar is always visible; users drag the resizer handle to adjust its width.
   const unifiedSidebar = document.getElementById("unifiedSidebar");
 
+  // File system access needed by the resizer to persist sidebar width across restarts
   const path = require("path");
   const fs = require("fs");
   const nw = window.nw || require("nw.gui");
-  
-  // Locate a safe directory in the OS for setting database files
   const settingsPath = path.join(nw.App.dataPath, "bazaar-settings.json");
-
-  // Save collapse settings so if a user restarts the app, their preference (e.g. sidebar open or closed) is remembered.
-  const saveSidebarState = (collapsed) => {
-    try {
-      let settings = {};
-      if (fs.existsSync(settingsPath)) {
-        settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-      }
-      settings.sidebarCollapsed = collapsed;
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf8");
-    } catch (e) {
-      console.error("Failed to save sidebar settings:", e);
-    }
-  };
-
-  if (toggleSidebarBtn && unifiedSidebar) {
-    toggleSidebarBtn.addEventListener("click", () => {
-      const isCollapsed = unifiedSidebar.classList.toggle("collapsed");
-      console.log("[User Event] Clicked toggle sidebar. Collapsed state:", isCollapsed);
-      saveSidebarState(isCollapsed);
-    });
-  }
-
-  if (closeSidebarBtn && unifiedSidebar) {
-    closeSidebarBtn.addEventListener("click", () => {
-      console.log("[User Event] Clicked close sidebar.");
-      unifiedSidebar.classList.add("collapsed");
-      saveSidebarState(true);
-    });
-  }
 
   // Step 9: Setup Resizable Sidebar Option 1
   const resizer = document.getElementById("sidebarResizer");
