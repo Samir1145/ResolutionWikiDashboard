@@ -162,7 +162,6 @@ function initAgent() {
   }
 
   // ─── Step 3: Wire Up Save Agent Q&A Analysis as HTML Report Card ───────────
-  const agentSaveReportBtn = document.getElementById("agentSaveReportBtn");
   if (agentSaveReportBtn) {
     agentSaveReportBtn.addEventListener("click", () => {
       if (!window.lastAgentQuery || !window.lastAgentAnswer) {

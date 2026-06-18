@@ -113,26 +113,8 @@ async function runClickthrough() {
 
   await sleep(1000);
 
-  // Step 3: Switch to Local RAG tab
-  console.log("\n[CDP Test] Step 3: Switching to 'Local RAG' tab...");
-  const clickRagTabJS = `
-    (function() {
-      const tabRagBtn = document.getElementById('tabRagBtn');
-      if (tabRagBtn) {
-        tabRagBtn.click();
-        const content = document.getElementById('ragTabContent');
-        return "Clicked RAG tab. RAG content visible: " + (content.style.display !== 'none');
-      }
-      return "Error: RAG tab button not found";
-    })()
-  `;
-  const step3Result = await sendCDPCommand(ws, cmdId++, "Runtime.evaluate", { expression: clickRagTabJS });
-  console.log("Result:", step3Result.result.value);
-
-  await sleep(1500);
-
-  // Step 4: Switch back to Agents tab
-  console.log("\n[CDP Test] Step 4: Switching back to 'Agents' tab...");
+  // Step 3: Switch to Agents tab
+  console.log("\n[CDP Test] Step 3: Switching to 'Agents' tab...");
   const clickAgentsTabJS = `
     (function() {
       const tabAgentsBtn = document.getElementById('tabAgentsBtn');
@@ -144,7 +126,25 @@ async function runClickthrough() {
       return "Error: Agents tab button not found";
     })()
   `;
-  const step4Result = await sendCDPCommand(ws, cmdId++, "Runtime.evaluate", { expression: clickAgentsTabJS });
+  const step3Result = await sendCDPCommand(ws, cmdId++, "Runtime.evaluate", { expression: clickAgentsTabJS });
+  console.log("Result:", step3Result.result.value);
+
+  await sleep(1500);
+
+  // Step 4: Switch back to Folders tab
+  console.log("\n[CDP Test] Step 4: Switching back to 'Folders' tab...");
+  const clickFoldersTabJS = `
+    (function() {
+      const tabFoldersBtn = document.getElementById('tabFoldersBtn');
+      if (tabFoldersBtn) {
+        tabFoldersBtn.click();
+        const content = document.getElementById('foldersTabContent');
+        return "Clicked Folders tab. Folders content visible: " + (content.style.display !== 'none');
+      }
+      return "Error: Folders tab button not found";
+    })()
+  `;
+  const step4Result = await sendCDPCommand(ws, cmdId++, "Runtime.evaluate", { expression: clickFoldersTabJS });
   console.log("Result:", step4Result.result.value);
 
   await sleep(1000);

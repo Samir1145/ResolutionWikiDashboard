@@ -15,6 +15,7 @@ sync_to_bundle() {
           --exclude="*" source/js/ "$BUNDLE/js/"
     rsync -a --include="*/" --include="*.html" --include="*.css" \
           --exclude="*" source/html/ "$BUNDLE/html/"
+    rm -f "$BUNDLE/js/dashboard.bin"
   fi
 }
 
