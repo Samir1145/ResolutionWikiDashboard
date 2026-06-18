@@ -61,7 +61,7 @@ function initAgent() {
 
       try {
         // 2. Perform fast, local mechanical OKF ingestion
-        const okfService = require("../okf.service");
+        const okfService = require("../services/okf.service");
         try {
           dbg("Running incremental OKF Ingest for:", window.currentProjectPath);
           okfService.ingestProject(window.currentProjectPath);
@@ -72,7 +72,7 @@ function initAgent() {
 
         // 3. Configure and trigger the Agent Q&A Skill
         agentLoaderText.textContent = "🤖 Agent is thinking...";
-        const agentService = require("../agent.service");
+        const agentService = require("../services/agent.service");
 
         // Logger callback inside loader text
         const onLog = (msg) => {

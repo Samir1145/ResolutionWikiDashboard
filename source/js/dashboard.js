@@ -15,7 +15,7 @@
 "use strict";
 
 // The project service handles read/write actions on the JSON config file `~/.tiddlydesktop/dashboard-config.json`
-const projectService = require("../js/dashboard/project.service");
+const projectService = require("../js/dashboard/services/project.service");
 
 // ─── Set up the Modular UI Controllers ───────────────────────────────────────
 // We register each separate feature script as a property under the `window.controllers` object.
@@ -23,7 +23,7 @@ const projectService = require("../js/dashboard/project.service");
 // project list watcher to update without needing to do a direct require).
 window.controllers = {
   // markdown: Simple text utility that translates Markdown text symbols (e.g., #, **, |) into HTML code.
-  markdown:  require("../js/dashboard/controllers/markdown.utils"),
+  markdown:  require("../js/dashboard/utils/markdown.utils"),
   
   // workspace: Manages the workspace tabs at the top (add, delete, switch, rename).
   workspace: require("../js/dashboard/controllers/workspace.controller"),

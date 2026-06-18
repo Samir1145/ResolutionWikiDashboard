@@ -14,7 +14,7 @@
 "use strict";
 
 // projectService handles config queries and reading folder metadata (.tiddlydesk-meta.json)
-const projectService = require("../project.service");
+const projectService = require("../services/project.service");
 
 /**
  * Opens the board view for a specific project folder.

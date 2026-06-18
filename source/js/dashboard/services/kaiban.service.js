@@ -485,7 +485,7 @@ ${html}`;
 
 // ─── Service API ─────────────────────────────────────────────────────────────
 
-const kaibanSkills = require("./skills/kaiban-skills");
+const kaibanSkills = require("../skills/kaiban-skills");
 
 async function checkOllamaHealth() {
   return { ok: true, models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-3.5-flash"] };
@@ -493,7 +493,7 @@ async function checkOllamaHealth() {
 
 async function runSkill(skillKey, params, onLog, onProgress, onTeamInit, onTaskStatusChange) {
   if (!kaibanSkills) {
-    kaibanSkills = require("./skills/kaiban-skills");
+    kaibanSkills = require("../skills/kaiban-skills");
   }
   const skill = kaibanSkills[skillKey];
   if (!skill) {

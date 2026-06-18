@@ -3,7 +3,8 @@
 
 const fs = require("fs");
 const path = require("path");
-const utils = require("./agent/utils");
+const utils = require("../utils/agent.utils");
+const safeFs = require("../utils/safe-fs");
 
 const TAG = "[OKFSvc]";
 function dbg(...args) { console.log(TAG, ...args); }
@@ -97,7 +98,7 @@ function findTiddlerFiles(tiddlersDir, results = []) {
 
 // Parse TiddlyWiki .tid header block and body
 function parseTidFile(filePath) {
-  const content = fs.readFileSync(filePath, "utf8");
+  const content = safeFs.readText(filePath);
   const lines = content.split(/\r?\n/);
   const headers = {};
   let bodyStartLine = 0;
@@ -131,22 +132,11 @@ function ingestProject(projectPath) {
   const docsDir = path.join(wikiDir, "documents");
 
   // Ensure directories exist
-  [okfDir, wikiDir, reportsDir, tiddlersDir, docsDir].forEach(d => {
-    if (!fs.existsSync(d)) {
-      fs.mkdirSync(d, { recursive: true });
-    }
-  });
+  [okfDir, wikiDir, reportsDir, tiddlersDir, docsDir].forEach(d => safeFs.ensureDir(d));
 
   // Load manifest.json to check file mtimes
   const manifestPath = path.join(okfDir, "manifest.json");
-  let manifest = { lastIngested: null, files: {} };
-  if (fs.existsSync(manifestPath)) {
-    try {
-      manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) || { lastIngested: null, files: {} };
-    } catch (e) {
-      dbgErr("Failed to parse existing manifest.json:", e.message);
-    }
-  }
+  const manifest = safeFs.readJson(manifestPath, { lastIngested: null, files: {} });
 
   const newManifestFiles = {};
   const wikiCatalog = {
@@ -174,7 +164,7 @@ function ingestProject(projectPath) {
     if (needsIngest) {
       try {
         dbg(`Ingesting HTML report: ${rel}`);
-        const raw = fs.readFileSync(r, "utf8");
+        const raw = safeFs.readText(r);
         const cleanText = utils.stripHtml(raw);
         const title = path.basename(r);
         const frontmatter = `---
@@ -186,7 +176,7 @@ tags: ["report"]
 ---
 ${cleanText}
 `;
-        fs.writeFileSync(destPath, frontmatter, "utf8");
+        safeFs.writeText(destPath, frontmatter);
         newManifestFiles[rel] = { mtime, okfPath: path.relative(okfDir, destPath), title };
       } catch (err) {
         dbgErr(`Failed to ingest report: ${rel}`, err.message);
@@ -240,11 +230,11 @@ tags: ${JSON.stringify(tags)}
 ---
 ${body}
 `;
-            fs.writeFileSync(destPath, frontmatter, "utf8");
+            safeFs.writeText(destPath, frontmatter);
             newManifestFiles[rel] = { mtime, okfPath: path.relative(okfDir, destPath), title };
           } else {
             // txt or md file inside tiddlers
-            const body = fs.readFileSync(f, "utf8");
+            const body = safeFs.readText(f);
             const title = path.basename(f);
             const frontmatter = `---
 title: ${JSON.stringify(title)}
@@ -255,7 +245,7 @@ tags: []
 ---
 ${body}
 `;
-            fs.writeFileSync(destPath, frontmatter, "utf8");
+            safeFs.writeText(destPath, frontmatter);
             newManifestFiles[rel] = { mtime, okfPath: path.relative(okfDir, destPath), title };
           }
         } catch (err) {
@@ -297,7 +287,7 @@ ${body}
 
       if (needsIngest) {
         try {
-          const raw = fs.readFileSync(fullPath, "utf8");
+          const raw = safeFs.readText(fullPath);
           const cleanText = utils.stripHtml(raw); // strip HTML if any
           const frontmatter = `---
 title: ${JSON.stringify(doc)}
@@ -308,7 +298,7 @@ tags: ["document"]
 ---
 ${cleanText}
 `;
-          fs.writeFileSync(destPath, frontmatter, "utf8");
+          safeFs.writeText(destPath, frontmatter);
           newManifestFiles[rel] = { mtime, okfPath: path.relative(okfDir, destPath), title: doc };
         } catch (err) {
           dbgErr(`Failed to ingest uploaded doc: ${rel}`, err.message);
@@ -361,13 +351,13 @@ ${cleanText}
   }
 
   const indexPath = path.join(okfDir, "index.md");
-  fs.writeFileSync(indexPath, indexLines.join("\n"), "utf8");
+  safeFs.writeText(indexPath, indexLines.join("\n"));
   dbg("Wrote root index.md successfully.");
 
   // Save new manifest.json
   manifest.lastIngested = new Date().toISOString();
   manifest.files = newManifestFiles;
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf8");
+  safeFs.writeJson(manifestPath, manifest);
   dbg("Wrote manifest.json. Ingestion completed.");
 }
 

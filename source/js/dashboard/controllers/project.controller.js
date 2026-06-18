@@ -3,7 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const projectService = require("../project.service");
+const projectService = require("../services/project.service");
 
 let projectDirectoryWatcher = null;
 

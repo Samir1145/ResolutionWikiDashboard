@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const config = require("./config.service");
+const safeFs = require("../utils/safe-fs");
 
 // ─── Workspace Management ───────────────────────────────────────────────────
 
@@ -157,25 +158,12 @@ function getProject(projectPath) {
 
 function readProjectMetadata(projectPath) {
   const metaPath = path.join(projectPath, ".tiddlydesk-meta.json");
-  if (!fs.existsSync(metaPath)) {
-    return { reports: {} };
-  }
-  try {
-    const raw = fs.readFileSync(metaPath, "utf8");
-    return JSON.parse(raw) || { reports: {} };
-  } catch (e) {
-    console.error("Failed to read project metadata:", e);
-    return { reports: {} };
-  }
+  return safeFs.readJson(metaPath, { reports: {} });
 }
 
 function writeProjectMetadata(projectPath, data) {
   const metaPath = path.join(projectPath, ".tiddlydesk-meta.json");
-  try {
-    fs.writeFileSync(metaPath, JSON.stringify(data, null, 2), "utf8");
-  } catch (e) {
-    console.error("Failed to write project metadata:", e);
-  }
+  safeFs.writeJson(metaPath, data);
 }
 
 // ─── Project Structure Scanning ─────────────────────────────────────────────

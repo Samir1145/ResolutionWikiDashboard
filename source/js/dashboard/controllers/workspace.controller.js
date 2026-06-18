@@ -1,7 +1,7 @@
 // workspace.controller.js - Workspace UI interactions and tabs rendering
 "use strict";
 
-const projectService = require("../project.service");
+const projectService = require("../services/project.service");
 
 function renderWorkspaces() {
   const tabsEl = document.getElementById("workspaceTabs");

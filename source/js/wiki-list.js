@@ -1,6 +1,6 @@
 // wiki-list.js – UI for displaying wikis inside a project folder
 "use strict";
-const projectService = require("../js/dashboard/project.service");
+const projectService = require("../js/dashboard/services/project.service");
 
 // Utility to read query parameter
 function getQueryParam(name) {

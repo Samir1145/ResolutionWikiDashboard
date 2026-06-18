@@ -3,7 +3,7 @@
 
 const path = require("path");
 const fs = require("fs");
-const projectService = require("../project.service");
+const projectService = require("../services/project.service");
 
 let basketItems = [];
 
@@ -282,7 +282,7 @@ function initBasket() {
     await addLogLine(`Found ${basketItems.length} items in the analysis basket.`);
 
     let allExtractedFolders = [];
-    const agentService = require("../kaiban.service");
+    const agentService = require("../services/kaiban.service");
 
     for (const item of basketItems) {
       const fileName = path.basename(item.filePath);

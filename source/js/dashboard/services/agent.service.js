@@ -17,9 +17,9 @@ const fs = require("fs");
 const path = require("path");
 
 // Import submodules
-const client = require("./agent/llm.client");     // Talks to Ollama or Gemini APIs
-const utils = require("./agent/utils");           // Formats report structures & strips HTML
-const executor = require("./agent/tool.executor"); // Dispatches tool functions to JS execution
+const client = require("../agent/llm.client");     // Talks to Ollama or Gemini APIs
+const utils = require("../utils/agent.utils");       // Formats report structures & strips HTML
+const executor = require("../agent/tool.executor"); // Dispatches tool functions to JS execution
 
 const TAG = "[AgentSvc]";
 function dbg(...args) { console.log(TAG, ...args); }
@@ -224,7 +224,7 @@ async function runAgent(options) {
 }
 
 // Load pre-defined system prompts and templates for skills (Section 29A, Valuations, Statutory audits)
-const SKILLS = require("./skills/index");
+const SKILLS = require("../skills/index");
 dbg("SKILLS loaded:", Object.keys(SKILLS).join(", "));
 
 /**
