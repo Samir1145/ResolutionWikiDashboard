@@ -7,8 +7,7 @@
 // 1. Loading files from the selected project directory and partitioning them into
 //    three visual columns: "To Do", "In Progress", and "Done".
 // 2. Rendering subfolders in the left menu bar as selectable Sub-boards.
-// 3. Sorting cards semantically using local AI similarity ratings if search matches.
-// 4. Wiring up mouse Drag-and-Drop events so dragging a card to a different column
+// 3. Wiring up mouse Drag-and-Drop events so dragging a card to a different column
 //    instantly updates its state database on disk.
 // ============================================================================
 
@@ -117,39 +116,15 @@ function renderBoardsSidebar() {
 async function loadWikis() {
   const searchWikis = document.getElementById("searchWikis");
   const term = searchWikis ? searchWikis.value.trim() : "";
-  const semanticToggle = document.getElementById("semanticSearchToggle");
-  
-  // If the user checked "Semantic Search" and typed a search term, we use vector ranking.
-  const isSemantic = semanticToggle && semanticToggle.checked && term.length > 0;
 
   try {
     // Step 1: Read all case files (.html, .htm, Tiddlers) inside the active board folder directory.
     let wikis = projectService.listReportsByBoard(window.currentProjectPath, window.activeBoardId);
 
     // Step 2: Apply search filters
-    if (isSemantic) {
-      // 🤖 SEMANTIC SEARCH ROUTINE:
-      // Instead of matching text names, we load the background RAG service to calculate 
-      // vector cosine similarity scores for document content.
-      const ragService = require("../rag.service");
-      const rankedFiles = await ragService.rankDocumentsByRelevance(window.currentProjectPath, term);
-      
-      // Create a map of file paths to similarity scores (e.g. {"/path/file.html": 0.82})
-      const scoresMap = {};
-      rankedFiles.forEach(item => {
-        scoresMap[item.filePath] = item.score;
-      });
-
-      // Filter out files that didn't match and sort remaining files by score descending (highest matches first)
-      wikis = wikis.filter(w => scoresMap[w.filePath] !== undefined);
-      wikis.sort((a, b) => (scoresMap[b.filePath] || 0) - (scoresMap[a.filePath] || 0));
-    } else {
-      // 📝 KEYWORD SEARCH ROUTINE:
-      // Standard search. If a term is provided, filter using case-insensitive file name matching.
-      if (term) {
-        const lowerTerm = term.toLowerCase();
-        wikis = wikis.filter(w => w.name.toLowerCase().includes(lowerTerm));
-      }
+    if (term) {
+      const lowerTerm = term.toLowerCase();
+      wikis = wikis.filter(w => w.name.toLowerCase().includes(lowerTerm));
     }
 
     // Step 3: Draw cards on the board columns.

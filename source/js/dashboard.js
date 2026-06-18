@@ -35,10 +35,7 @@ window.controllers = {
   kanban:    require("../js/dashboard/controllers/kanban.controller"),
   
   // basket: Handles files dragged into the analysis dropzone at the bottom.
-  basket:    require("../js/dashboard/controllers/basket.controller"),
-  
-  // rag: Manages the sidebar AI chats, local indexing notifications, and report compilation.
-  rag:       require("../js/dashboard/controllers/rag.controller")
+  basket:    require("../js/dashboard/controllers/basket.controller")
 };
 
 // ─── Global State ────────────────────────────────────────────────────────────
@@ -83,7 +80,7 @@ function boot() {
   window.controllers.project.initDashboard();     // Renders projects list
   window.controllers.kanban.initDragAndDrop();   // Setup columns drop zones listeners
   window.controllers.basket.initBasket();         // Setup bottom file dropzone
-  window.controllers.rag.initRag();               // Setup sidebar tabs & buttons
+
 
   // Step 3: Wire up dashboard search bar input changes
   const searchWikis = document.getElementById("searchWikis");

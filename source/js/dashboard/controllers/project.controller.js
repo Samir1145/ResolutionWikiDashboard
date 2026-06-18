@@ -152,7 +152,6 @@ function setupProjectWatcher(projectPath) {
   }
 
   let debounceTimeout = null;
-  let ragDebounceTimeout = null;
   try {
     projectDirectoryWatcher = fs.watch(projectPath, { recursive: true }, (eventType, filename) => {
       if (filename && (filename.startsWith(".") || filename.includes("/.") || filename.includes("\\."))) {
@@ -174,58 +173,15 @@ function setupProjectWatcher(projectPath) {
           window.controllers.kanban.loadWikis();
         }
       }, 300);
-
-      if (ragDebounceTimeout) {
-        clearTimeout(ragDebounceTimeout);
-      }
-      ragDebounceTimeout = setTimeout(() => {
-        if (window.currentProjectPath) {
-          console.log("[RAG] Watcher triggered indexing...");
-          triggerRagIndexing();
-        }
-      }, 5000);
     });
   } catch (err) {
     console.error("Failed to start directory watcher:", err);
   }
 }
 
-function triggerRagIndexing() {
-  if (!window.currentProjectPath) return Promise.resolve();
-  const loader = document.getElementById("ragLoader");
-  const loaderText = document.getElementById("ragLoaderText");
-  const wasLoaderVisible = loader && loader.style.display !== "none";
-  
-  if (loader && loaderText && !wasLoaderVisible) {
-    loader.style.display = "block";
-    loaderText.textContent = "⚡ Auto-indexing updated project files...";
-  }
 
-  // Get RAG service wrapper dynamically
-  const ragService = require("../rag.service");
-  
-  return ragService.indexProject(window.currentProjectPath, (progress) => {
-    const percent = Math.round(progress * 100);
-    if (loaderText) {
-      loaderText.textContent = `⚡ Auto-indexing updated project files (${percent}%)...`;
-    }
-  })
-  .then(() => {
-    console.log("[RAG] Auto-indexing completed.");
-    if (loader && !wasLoaderVisible) {
-      loader.style.display = "none";
-    }
-  })
-  .catch(err => {
-    console.error("[RAG] Auto-indexing failed:", err);
-    if (loader && !wasLoaderVisible) {
-      loader.style.display = "none";
-    }
-  });
-}
 
 module.exports = {
   initDashboard,
-  setupProjectWatcher,
-  triggerRagIndexing
+  setupProjectWatcher
 };
