@@ -80,6 +80,7 @@ async function runAgent(options) {
   const context = {
     log:        onLog,
     skillName:  options.skillName || "IBC Analysis",
+    projectPath: options.projectPath, // Keep track of the active project directory
     sourceFiles: [], // Keeps track of files the agent read
     outputFile: null // Stores the path of the generated output report
   };
@@ -285,6 +286,7 @@ async function runSkill(skillName, params, onLog, onProgress) {
     outputName: params.outputName,
     boardPath: params.boardPath,
     reportPath: params.reportPath,
+    projectPath: params.projectPath,
     onLog,
     onProgress
   };

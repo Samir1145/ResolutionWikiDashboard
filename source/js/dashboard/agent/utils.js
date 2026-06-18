@@ -56,11 +56,18 @@ function readReportContent(filePath) {
     return joined;
   }
 
-  // Single HTML file
+  // Read file contents
   const raw = fs.readFileSync(filePath, "utf8");
-  dbg(`Read ${raw.length} bytes from HTML file`);
-  const text = stripHtml(raw);
-  dbg(`After strip: ${text.length} chars`);
+  dbg(`Read ${raw.length} bytes from file`);
+  
+  let text = raw;
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext !== ".md" && ext !== ".txt" && ext !== ".tid") {
+    dbg("Stripping HTML markup");
+    text = stripHtml(raw);
+  }
+  
+  dbg(`After parsing/stripping: ${text.length} chars`);
   const capped = text.length > 30000 ? text.slice(0, 30000) + "\n\n[...content truncated...]" : text;
   dbg(`Sending ${capped.length} chars to LLM`);
   return capped;
