@@ -17,8 +17,8 @@ Resolution Bazaar is a secure, local, offline-first case management dashboard de
 │                            RESOLUTION BAZAAR                                │
 │                                                                             │
 │  ┌───────────────────────┐  ┌───────────────────────┐  ┌─────────────────┐  │
-│  │   Case Workspaces     │  │   Interactive Kanban  │  │   Offline RAG   │  │
-│  │ (Separate Debtors)    │  │ (Progress Tracking)   │  │  (Local search) │  │
+│  │   Case Workspaces     │  │   Interactive Kanban  │  │    OKF Wiki     │  │
+│  │ (Separate Debtors)    │  │ (Progress Tracking)   │  │  Catalog & Q&A  │  │
 │  └───────────────────────┘  └───────────────────────┘  └─────────────────┘  │
 │              │                          │                       │           │
 │              └──────────────────────────┼───────────────────────┘           │
@@ -39,13 +39,13 @@ Resolution Bazaar organizes these documents into a visual, drag-and-drop **Kanba
 Legal and financial records of distressed corporate debtors are highly confidential. Uploading files to public cloud models (like OpenAI ChatGPT or Google Gemini) violates NDAs and client confidentiality terms.
 
 Resolution Bazaar solves this with a **zero-trust, offline-first security design**:
-* **Local Retrieval-Augmented Generation (RAG)**: Processes vector embeddings locally on your machine using ONNX WebAssembly, and connects to a secure, local **Llamafile** or **Ollama** server running on your localhost.
+* **Open Knowledge Format (OKF) Catalog**: Compiles report cards, wikis, and case records into clean, local Markdown folders structured under `.tiddlydesk-okf/` index schemas. This keeps all metadata in human-readable, vendor-neutral formats.
 * **Autonomous ReAct Agent Loop**: Runs multi-agent audits and statutory reviews locally, with fallback to encrypted cloud API providers (Gemini or OpenAI) only if the user explicitly inputs their credentials and opts in.
 
 #### 1.3. User Personas & Workflows
 * **Resolution Professionals (RPs)**: Use workspaces to separate corporate debtors, upload documents, run Section 29A eligibility compliance reports on potential resolution applicants, and output statutory plan audits.
 * **Liquidators**: Track asset registers, compare independent valuation reports, calculate haircuts, and record liquidator certificates.
-* **Legal Advisors**: Query the case repository via the RAG sidebar to quickly retrieve clauses, identify contract defaults, and track corporate litigation records.
+* **Legal Advisors**: Query the case repository via the **Ask Agent (OKF Wiki)** sidebar tab to quickly retrieve clauses, identify contract defaults, and track corporate litigation records.
 
 #### 1.4. Key Insolvency Terms & CIRP Timelines
 Under the Indian IBC 2016 framework, the Corporate Insolvency Resolution Process (CIRP) must be completed within **180 days** (extendable to a maximum of **330 days** including litigation delays). RPs face severe legal penalties for timeline breaches. Resolution Bazaar groups documents into swimlanes representing key milestones:
@@ -108,7 +108,7 @@ Clicking on any Project card opens the dedicated **Interactive Kanban Board** fo
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ Project: Debtor_Alpha                         [ Main Board ] [ RAG 🔍] │
+│ Project: Debtor_Alpha                         [ Main Board ] [ Ask Agent 🤖] │
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                        │
 │  ┌───────────────────┐    ┌───────────────────┐    ┌────────────────┐  │
@@ -160,43 +160,38 @@ Moving cards on a Kanban board usually forces files to move between subfolders, 
 
 ---
 
-### 4. Working with Local Offline RAG
+### 4. Working with the OKF Catalog & Q&A Agent
 
-The right sidebar houses the local offline **Retrieval-Augmented Generation (RAG)** engine, giving you a secure search experience.
+The right sidebar houses the **Ask Agent (OKF Wiki)** interface under the **🤖 Agents** tab, providing secure local workspace search and Q&A.
 
-#### 4.1. Secure Ingestion (Paperclip `📎` Upload)
-To add a document (HTML, text, Markdown, or `.tid`) to your active board:
-1. Click the paperclip icon (`📎`) inside the text field at the bottom of the right sidebar.
-2. Select the files from your computer.
-3. The app automatically copies the selected files into the active board directory.
-4. The Kanban board reloads instantly.
-5. In the background, the indexing thread schedules a run. To keep UI performance smooth, the indexer waits for a 5-second debounce window to ensure all files finish copying before generating vector embeddings.
+#### 4.1. Fast Mechanical OKF Ingestion
+Whenever you query the Agent, the system automatically runs an incremental mechanical crawler to sync your project files into the **Open Knowledge Format (OKF)** standard:
+1. All report files, TiddlyWiki `.tid` documents, and user-uploaded text documents are parsed.
+2. The parsed contents are generated as Markdown documents with standard YAML frontmatter headings.
+3. System tiddlers (prefixed with `$:/`) are automatically filtered out.
+4. Legacy document references from `.tiddlydesk-rag/` are automatically migrated to `.tiddlydesk-okf/wiki/documents/`.
+5. The system writes a compiled `index.md` catalog sheet mapping reports, tiddlers, and documents.
 
-#### 4.2. Chatting with Case Files in Real-time
-* **Query Input**: Type a question in the query text box (e.g., *"What is the haircut percentage proposed by Applicant X?"* or *"Summarize the litigation issues in the admission order"*).
-* **Execution**: Click `Ask Local LLM` or press `Ctrl + Enter` (on Windows/Linux) or `Cmd + Enter` (on Mac).
-* **Progress Steps**: The loader panel displays step-by-step progress details:
-  1. *Retrieving local file contexts...* (Runs vector similarity).
-  2. *Ingesting context into local Llamafile...* (Feeds findings to the LLM model).
-* **Output**: The answer renders as rich HTML in the sidebar, displaying tables, bold highlights, and code structures.
+#### 4.2. Chatting with Case Files via ReAct Agent Loop
+* **Query Input**: Type a question in the query input box (e.g., *"What is the liquidation value?"* or *"Summarize Section 29A issues"*).
+* **Execution**: Click **`Ask Agent`** or press `Cmd/Ctrl + Enter`.
+* **The ReAct Loop**: The agent will run a multi-turn ReAct loop:
+  1. *Reading the catalog index...* (Retrieving the `index.md` catalog schema using the `read_wiki_index` tool).
+  2. *Searching catalog documents...* (Running `search_wiki` to grep files for matching terms).
+  3. *Answering query...* (Consolidating the content to construct a complete legal-compliance answer).
+* **Output**: The answer is formatted as rich HTML/Markdown in the agent pane.
 
 #### 4.3. Understanding Context Attribution & Source Citations
-A major challenge with generic AI chats is hallucination. Resolution Bazaar mitigates this:
-* Below every generated response, click on the **`🔍 Context Sources used`** dropdown.
-* This lists every document (e.g., `Plan_Bidder_A.html`, `Admission_Order.html`) that contributed to the vector similarity chunks fed to the LLM. If the answer cannot be found in the files, the LLM outputs: *"No relevant local records found for this question."*
+The Agent references and logs the sources it examined during tool usage:
+* The conversation history details each tool execution (e.g., calling `read_wiki_index`, calling `search_wiki` with target terms).
+* This provides clear auditability, showing exactly which files the agent examined to compose its response.
 
-#### 4.4. Compiling & Saving Custom RAG Reports
-Once a query returns a useful analysis, you can save it:
-1. Click **`💾 Save as Report`** in the query footer.
-2. Input a title (e.g., *"Bidder A Haircut Summary"*).
-3. The system compiles the query, answer markdown, and a list of cited source files into a styled HTML document.
+#### 4.4. Saving Custom Agent Reports
+You can save any agent analysis back into the case workspace:
+1. Click **`💾 Save as Report`** in the response footer.
+2. Input a title (e.g., *"Valuation Report Outliers Summary"*).
+3. The system compiles the query, response markdown, and source links into a styled HTML document.
 4. The file is saved directly to your active board directory, appearing instantly as a new Kanban card in your active column.
-
-#### 4.5. Semantic Sort: Highlighting Relevant Cards
-Beside the search input above the Kanban board, toggle the **`🔍 Semantic Search (Local RAG)`** checkbox:
-* Type a search phrase (e.g., *"Liquidation Value"*).
-* Instead of running standard text matching on file names, the local vector indexer calculates the semantic similarity score for each file's content.
-* The Kanban board automatically sorts the cards in each column by similarity score, placing the most relevant files at the top.
 
 ---
 
@@ -279,14 +274,14 @@ Resolution Bazaar operates in a hybrid environment, merging chromium browser int
        │                 │                                       │
        │   ┌─────────────▼─────────────┐                         │
        │   │   Background Node.js      │                         │
-       │   │  - Vector Math Calculations                        │
-       │   │  - Transformers.js WASM   │                         │
+       │   │  - Multi-Agent Teams      │                         │
+       │   │  - KaibanJS Engine        │                         │
        │   └───────────────────────────┘                         │
        └─────────────────────────────────────────────────────────┘
 ```
 
 * **Core Runtime Container**: **NW.js v0.108.0-sdk**. NW.js allows running Node.js and Chromium side-by-side, enabling files access, child process management, and local system thread tasks directly inside your UI scripts.
-* **Local Embeddings**: **Transformers.js (`@xenova/transformers`)**. It loads the `all-MiniLM-L6-v2` model (384-dimensions) to generate vector embeddings. The library runs in a standalone Node thread using WebAssembly, supporting SIMD vector scaling and multi-threaded processing.
+* **ReAct Agent Loop Engine**: Built with a custom reasoning loop supporting standard tools like directory crawling, text files search (`search_wiki`), and index file reading.
 * **LLM Engine Options**:
   * **Llamafile (v0.8.8+)**: A single-file executable local server compiled using Cosmopolitan Libc. It listens on port `8080` to provide an offline, OpenAI-compatible local chat endpoint.
   * **Ollama (v0.1.48+)**: A local developer runner service listening on port `11434`.
@@ -303,7 +298,6 @@ TiddlyDesk/
 ├── package.json              # Main package configuration with dependencies
 ├── run.sh                    # Startup wrapper for synchronizing and running the app
 ├── test_interactive.js       # CDP interactive browser automation script
-├── test_rag.js               # Offline RAG unit tests suite
 │
 └── source/
     ├── package.json          # NW.js app entry and Chromium arguments configuration
@@ -315,28 +309,36 @@ TiddlyDesk/
     │
     └── js/
         ├── run_agent.js      # Background process runner for KaibanJS
-        ├── run_rag.js        # Background process runner for ONNX RAG queries
         ├── dashboard.js      # Thin mediator script booting controllers
         │
         └── dashboard/
-            ├── project.service.js   # Project workspace local filesystem database
-            ├── kaiban.service.js    # Decoupled agent definitions & wiki parsers
-            ├── rag.service.js       # RAG wrapper spawning run_rag.js
-            ├── rag_internal.js      # Core RAG indexer and vector math calculations
-            │
             ├── controllers/         # UI Component Controllers
             │   ├── workspace.controller.js # Workspace tabs creation and renaming
-            │   ├── project.controller.js   # Link projects, watchers, and indexing
+            │   ├── project.controller.js   # Link projects, watchers, and UI refresh
             │   ├── kanban.controller.js    # Card rendering, drag-drop, and filters
             │   ├── basket.controller.js    # Analyse basket dropzone and extractions
-            │   ├── rag.controller.js       # RAG tab clicks, ask queries, and saves
-            │   └── markdown.utils.js       # Markdown-to-HTML parser regex utilities
+            │   └── agent.controller.js     # Unified agent sidebar pane controller
             │
-            └── agent/               # Custom ReAct Agent Runner
-                ├── agent.service.js # Main ReAct reasoning loop driver
-                ├── llm.client.js    # HTTP/HTTPS clients for Ollama and Gemini APIs
-                ├── tool.executor.js # Tool actions dispatcher (read/write reports)
-                └── utils.js         # Text sanitizers and HTML templates compiler
+            ├── services/            # Business Logic Services
+            │   ├── project.service.js      # Workspace project scanning and database
+            │   ├── config.service.js       # Global config storage manager
+            │   ├── agent.service.js        # Custom single-agent reasoning loop orchestrator
+            │   ├── kaiban.service.js       # Multi-agent team orchestration driver
+            │   └── okf.service.js          # Ingestion crawler converting files to OKF format
+            │
+            ├── agent/               # Custom ReAct Agent Runner
+            │   ├── llm.client.js           # HTTP/HTTPS clients for Ollama and Gemini APIs
+            │   └── tool.executor.js        # Tools executor (read_wiki_index, search_wiki, read_report)
+            │
+            ├── skills/              # Prompts and configuration checklists
+            │   ├── okf-qa.skill.js         # Prompt structure for case Q&A agent
+            │   ├── section-29a.skill.js    # Guidelines for applicant eligibility audits
+            │   └── index.js                # Core register exporting all skills
+            │
+            └── utils/               # Decoupled Stateless Utilities
+                ├── safe-fs.js              # Try/catch wrapped safe file-system helper
+                ├── markdown.utils.js       # Regex converter mapping markdown to HTML
+                └── agent.utils.js          # Text cleaners and HTML templates compiler
 ```
 
 #### 7.1. Core Mediator (`dashboard.js`)
@@ -345,28 +347,29 @@ The main file [dashboard.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/Tidd
 // dashboard.js - Mediator Pattern Bootstrapper
 "use strict";
 
-const workspaceController = require("./dashboard/controllers/workspace.controller");
-const projectController   = require("./dashboard/controllers/project.controller");
-const kanbanController    = require("./dashboard/controllers/kanban.controller");
-const basketController    = require("./dashboard/controllers/basket.controller");
-const ragController       = require("./dashboard/controllers/rag.controller");
-const markdownUtils       = require("./dashboard/controllers/markdown.utils");
+const projectService = require("../js/dashboard/services/project.service");
 
 window.controllers = {
-  workspace: workspaceController,
-  project:   projectController,
-  kanban:    kanbanController,
-  basket:    basketController,
-  rag:       ragController,
-  markdown:  markdownUtils
+  markdown:  require("../js/dashboard/utils/markdown.utils"),
+  workspace: require("../js/dashboard/controllers/workspace.controller"),
+  project:   require("../js/dashboard/controllers/project.controller"),
+  kanban:    require("../js/dashboard/controllers/kanban.controller"),
+  basket:    require("../js/dashboard/controllers/basket.controller"),
+  agent:     require("../js/dashboard/controllers/agent.controller")
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  workspaceController.initWorkspaces();
-  kanbanController.initDragAndDrop();
-  basketController.initBasket();
-  ragController.initRag();
-});
+function boot() {
+  window.projectService = projectService;
+  window._loadWikis = window.controllers.kanban.loadWikis;
+
+  showView("dashboardView");
+  
+  window.controllers.workspace.initWorkspaces();
+  window.controllers.project.initDashboard();
+  window.controllers.kanban.initDragAndDrop();
+  window.controllers.basket.initBasket();
+  window.controllers.agent.initAgent();
+}
 ```
 
 #### 7.2. Split Controller Architecture
@@ -375,8 +378,7 @@ To keep the codebase easy to maintain, UI controls are split into independent fi
 * [project.controller.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/controllers/project.controller.js): Manages adding, removing, and renaming case project card links. Establishes the `fs.watch` event hooks to update the Kanban view dynamically when files are added or deleted.
 * [kanban.controller.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/controllers/kanban.controller.js): Binds drag-and-drop actions to columns, renders cards, and applies sorting filters.
 * [basket.controller.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/controllers/basket.controller.js): Binds mouse drop gestures to the bottom sidebar dropzone, extracting file contents.
-* [rag.controller.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/controllers/rag.controller.js): Connects sidebar form fields to local embeddings, streams loader states, and saves HTML report cards.
-* [markdown.utils.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/controllers/markdown.utils.js): A regex-based markdown parser that converts headers, bold highlights, lists, and tables into HTML.
+* [agent.controller.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/controllers/agent.controller.js): Connects sidebar form fields to the OKF ingestion and ReAct Agent loop, updates thinking logs, and compiles reports.
 
 ---
 
@@ -393,28 +395,25 @@ This occurs because the Chromium V8 engine tries to resolve imports using its st
 
 #### 8.2. Background Node Processes
 To prevent this, Resolution Bazaar isolates heavy libraries inside background Node.js processes.
-* **RAG Engine**: [rag.service.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/rag.service.js) spawns a child node process running [run_rag.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/run_rag.js), which loads `@xenova/transformers`.
-* **Agent Engine**: [kaiban.service.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/kaiban.service.js) spawns a child process running [run_agent.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/run_agent.js), which loads `kaibanjs`.
+* **Agent Engine**: The agent playground (`kaiban-playground.js`) spawns a child process running `run_agent.js`, which loads `kaibanjs` safely.
 * **Inter-Process Communication (IPC)**:
   * The main window sends instructions by writing to `stdin` on the spawned child process.
   * The child process writes results back as structured JSON lines on `stdout`, which the parent process parses in real-time.
 
 ```javascript
-// IPC Spawn in rag.service.js
+// IPC Spawn in kaiban-playground.js
 const { spawn } = require("child_process");
-const child = spawn("node", [path.join(__dirname, "../run_rag.js")]);
+const child = spawn("node", [path.join(__dirname, "run_agent.js")]);
 
 // Send JSON instructions
-child.stdin.write(JSON.stringify({ action: "query", projectPath, query }));
+child.stdin.write(JSON.stringify({ provider, apiKey, model, aboutMeText }));
 child.stdin.end();
 
 // Receive JSON events
 child.stdout.on("data", (data) => {
   const payload = JSON.parse(data.toString());
-  if (payload.type === "progress") {
-    onProgress(payload.message);
-  } else if (payload.type === "result") {
-    resolve(payload.data);
+  if (payload.type === "log") {
+    log(payload.message, payload.style);
   }
 });
 ```
@@ -423,9 +422,9 @@ child.stdout.on("data", (data) => {
 To prevent the main renderer thread from inadvertently loading heavy node modules at startup, all requires are loaded lazily inside function blocks rather than at the top of the file:
 ```javascript
 // Correct: Lazy load inside action handlers
-function triggerSearch() {
-  const ragService = require("../rag.service"); // Loaded only when needed
-  ragService.queryRAG(...);
+function triggerIngest() {
+  const okfService = require("../services/okf.service"); // Loaded only when needed
+  okfService.ingestProject(...);
 }
 ```
 
@@ -434,37 +433,24 @@ When connecting to debugging sockets (such as Chrome DevTools Protocol or local 
 
 ---
 
-### 9. Custom Offline RAG Implementation Details
+### 9. OKF Ingestion & In-Memory Grep Search Implementation Details
 
-#### 9.1. Cosine Similarity & Dot Product Math
-The local RAG service computes similarity matches between query vectors and document chunk vectors. Since the vector arrays returned by Transformers.js are pre-normalized to a Euclidean length of 1 ($\|A\| = 1$ and $\|B\| = 1$), the Cosine Similarity calculation simplifies to a dot product:
+#### 9.1. Mechanical Ingestion & Normalization
+The ingestion pipeline converts all workspace reports, wikis, and uploads into a standard, vendor-neutral directory structure inside `.tiddlydesk-okf/`:
+1. **Metadata Headers Extraction**: Standardizes files by compiling their properties (such as title, tags, and last modification timestamp) into a formatted YAML frontmatter block at the top of each Markdown document.
+2. **Text Normalization**: Strips HTML tags, script elements, CSS style declarations, and entities from raw reports and documents before saving.
+3. **Filter System Tiddlers**: Ignores TiddlyWiki system files starting with `$:/` to ensure only actual workspace data is indexed.
 
-$$\text{Similarity}(A, B) = \cos(\theta) = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\|\|\mathbf{B}\|} = \mathbf{A} \cdot \mathbf{B} = \sum_{i=1}^{n} A_i B_i$$
+#### 9.2. Incremental Crawler Algorithm
+To keep workspace crawling lightning-fast (<10ms on subsequent runs), the ingestion pipeline uses an incremental check:
+* The system checks the filesystem modification timestamp (`mtimeMs`) for each file in the workspace directory.
+* It compares the `mtimeMs` against the recorded timestamp inside `.tiddlydesk-okf/manifest.json`.
+* Files that haven't been modified are skipped. Only modified or new files are crawled.
 
-```javascript
-// Inline Dot Product calculation in rag_internal.js
-function dotProduct(vecA, vecB) {
-  let dot = 0;
-  const len = Math.min(vecA.length, vecB.length);
-  for (let i = 0; i < len; i++) {
-    dot += vecA[i] * vecB[i];
-  }
-  return dot;
-}
-```
-
-#### 9.2. Hybrid Retrieval Engine
-To optimize query accuracy, Resolution Bazaar runs a hybrid retrieval routine:
-1. **Semantic Search**: Generates a 384-dimensional query vector using `Xenova/all-MiniLM-L6-v2`, calculates the cosine similarity against all database vector chunks, and ranks them in descending order.
-2. **Keyword Search**: Splits the query into terms (excluding stop words) and matches them against database document chunks using a case-insensitive substring search. Chunks are scored by match frequency.
-3. **Merge and Deduplicate**: Merges the top results from both searches, removes duplicates, and returns the top 4 context blocks to feed to the local LLM.
-
-#### 9.3. Incremental Indexing & Vector Garbage Collection
-To prevent unnecessary re-indexing on every search:
-* The system checks the filesystem modification timestamp (`mtimeMs`) for each file in the project folder.
-* If a file's timestamp matches the recorded timestamp in the index, the system reuse its cached vector embeddings.
-* Only modified or new files are parsed, split, embedded, and added to the index.
-* **Vector Garbage Collection**: The system compares the file paths in the index against active files on disk. Any vector chunks associated with deleted files are automatically removed from `.tiddlydesk-embeddings.json`.
+#### 9.3. Grep Search Tool Implementation
+The Agent runs keyword queries on the OKF catalog using the `search_wiki` tool. Instead of complex vector embeddings databases, this tool leverages lightweight, fast regex search:
+* Performs recursive, case-insensitive keyword searches matching terms inside the `.tiddlydesk-okf/` catalog text files.
+* Returns snippets containing the matched text, allowing the agent to locate precise information across the catalog.
 
 ---
 
@@ -498,7 +484,7 @@ For the custom single-agent skills, the application runs a lightweight autonomou
 
 #### 10.1. ReAct Execution Protocol
 The execution engine runs for a maximum of 12 turns:
-1. **Thought**: The LLM determines the next action and decides whether to call a tool.
+1. **Thought**: The LLM determines the next action and decides whether to call a tool (such as `read_wiki_index` or `search_wiki`).
 2. **Action**: If a tool is called, the loop pauses and executes the associated local JavaScript helper.
 3. **Observation**: The output from the tool is formatted and appended to the model's message history.
 4. The loop repeats until the LLM returns its final text response or calls `write_report`.
@@ -548,6 +534,10 @@ Specialized agent tasks are defined in the `source/js/dashboard/skills/` directo
 * **Goal**: Parses asset valuation logs prepared by two independent registered valuers.
 * **Target Output**: Identifies both valuers' estimates, extracts fair and liquidation values across asset classes (Land & Buildings, Plant & Machinery, Financial Assets), computes variance margins, and flags variances exceeding 25% (triggering third-valuer requirements under CIRP rules).
 
+#### 11.4. OKF Catalog Q&A Skill
+* **File**: [okf-qa.skill.js](file:///Users/atulgrover/Desktop/TiddlyDesktop/TiddlyDesk/source/js/dashboard/skills/okf-qa.skill.js)
+* **Goal**: Instructs the agent to answer questions by navigating the Case Catalog, reading the index, and running keyword searches.
+
 ---
 
 ### 12. Build System, Testing, & Release Packaging
@@ -569,5 +559,5 @@ When packaging a release:
 
 #### 12.3. Offline Verification Suite
 To verify changes without running the full application UI:
-* **RAG Unit Tests**: Run `node test_rag.js` to verify file parsing, character text splitting, vector similarity calculations, and embeddings index caching using offline mocks.
+* **OKF Ingestion Unit Tests**: Run the unit test suite (`test_okf.js`) using Node to verify HTML stripping, YAML frontmatter output schema, manifest caching, and incremental crawl efficiency.
 * **Interactive Automation Tests**: Run `node test_interactive.js` to open the application in SDK debug mode, connect via Chrome DevTools Protocol, and verify UI tabs navigation, drag-and-drop operations, and indexing triggers.
